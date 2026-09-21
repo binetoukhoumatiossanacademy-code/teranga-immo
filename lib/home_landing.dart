@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import 'home.dart';
 
 const _green = Color(0xFF0D6B3D);
 const _ink = Color(0xFF143C2B);
 const _gold = Color(0xFFE8A315);
 
-/// Accueil construit d'après les maquettes fournies. Aucun service distant.
+/// Accueil construit d'après les maquettes fournies.
 class HomeLanding extends StatelessWidget {
   const HomeLanding({
     super.key,
     required this.onSearch,
     required this.onDetail,
+    this.connected = false,
+    this.announcement,
+    this.status,
   });
   final VoidCallback onSearch;
   final VoidCallback onDetail;
+  final bool connected;
+  final Home? announcement;
+  final Widget? status;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -145,18 +152,20 @@ class HomeLanding extends StatelessWidget {
                   color: const Color(0xFFFFF5DF),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       size: 17,
                       color: Color(0xFF98690C),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Mode démo · annonces et visuels fictifs',
-                        style: TextStyle(
+                        connected
+                            ? 'Annonces approuvées · informations des annonceurs'
+                            : 'Mode démo · annonces et visuels fictifs',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF7C5A17),
                         ),
@@ -168,10 +177,10 @@ class HomeLanding extends StatelessWidget {
               const SizedBox(height: 22),
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'À découvrir à Dakar',
-                      style: TextStyle(
+                      connected ? 'À découvrir' : 'À découvrir à Dakar',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: _ink,
@@ -252,128 +261,180 @@ class HomeLanding extends StatelessWidget {
     ),
   );
 
-  Widget _listing(BuildContext context) => Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE3E9E2)),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x080D3A22),
-          blurRadius: 14,
-          offset: Offset(0, 5),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 1.95,
-              child: Image.asset(
-                'assets/homes/salon_demo.png',
-                fit: BoxFit.cover,
-                semanticLabel: 'Illustration fictive : salon lumineux aux tons beige et vert',
+  Widget _listing(BuildContext context) => connected && announcement == null
+      ? status ?? const SizedBox.shrink()
+      : Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE3E9E2)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x080D3A22),
+                blurRadius: 14,
+                offset: Offset(0, 5),
               ),
-            ),
-            Positioned(
-              left: 12,
-              top: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: const Text(
-                  'EXEMPLE FICTIF',
-                  style: TextStyle(
-                    fontSize: 9,
-                    letterSpacing: .7,
-                    fontWeight: FontWeight.w700,
-                    color: _green,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text.rich(
-                TextSpan(
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1.95,
+                    child: connected
+                        ? Container(
+                            color: const Color(0xFFEAF2E9),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.apartment_outlined,
+                                  size: 56,
+                                  color: _green,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Photo non renseignée',
+                                  style: TextStyle(color: _green, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Image.asset(
+                            'assets/homes/salon_demo.png',
+                            fit: BoxFit.cover,
+                            semanticLabel:
+                                'Illustration fictive : salon lumineux aux tons beige et vert',
+                          ),
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        connected ? 'ANNONCE APPROUVÉE' : 'EXEMPLE FICTIF',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          letterSpacing: .7,
+                          fontWeight: FontWeight.w700,
+                          color: _green,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextSpan(
-                      text: '180 000 FCFA',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: connected
+                                ? (announcement!.rent == null
+                                      ? 'Loyer non renseigné'
+                                      : '${announcement!.price} FCFA')
+                                : '180 000 FCFA',
+                            style: const TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                              color: _ink,
+                            ),
+                          ),
+                          TextSpan(
+                            text: connected && announcement!.rent == null
+                                ? ''
+                                : ' / mois',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF717A73),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      connected
+                          ? announcement!.title
+                          : 'Un appartement pour se sentir chez soi',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                         color: _ink,
                       ),
                     ),
-                    TextSpan(
-                      text: ' / mois',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF717A73)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 15,
+                          color: _green,
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            connected
+                                ? announcement!.location
+                                : 'Ouakam, Dakar',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF657267),
+                            ),
+                          ),
+                        ),
+                        if (!connected) ...[
+                          const Icon(
+                            Icons.bed_outlined,
+                            size: 16,
+                            color: _green,
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            '2 chambres',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF657267),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: onDetail,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Voir l’annonce'),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Un appartement pour se sentir chez soi',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Row(
-                children: [
-                  Icon(Icons.location_on_outlined, size: 15, color: _green),
-                  SizedBox(width: 5),
-                  Text(
-                    'Ouakam, Dakar',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF657267)),
-                  ),
-                  Spacer(),
-                  Icon(Icons.bed_outlined, size: 16, color: _green),
-                  SizedBox(width: 5),
-                  Text(
-                    '2 chambres',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF657267)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onDetail,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text('Voir l’annonce'),
-                ),
-              ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
+        );
 
   Widget _trustPanel() => Container(
     width: double.infinity,

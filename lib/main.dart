@@ -1,15 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'home_landing.dart';
+import 'home.dart';
+import 'app_config.dart';
+import 'annonces_repository.dart';
 
-void main() => runApp(const TerangaApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  const config = AppConfig.fromEnvironment();
+  if (!config.isProvided) {
+    runApp(const TerangaApp());
+    return;
+  }
+  if (!config.isValid) {
+    runApp(
+      const TerangaApp(
+        configurationError: 'Configuration Supabase incomplète ou invalide.',
+      ),
+    );
+    return;
+  }
+  try {
+    await Supabase.initialize(
+      url: config.url,
+      publishableKey: config.publishableKey,
+    );
+    runApp(
+      TerangaApp(
+        repository: SupabaseAnnoncesRepository(Supabase.instance.client),
+      ),
+    );
+  } catch (_) {
+    runApp(
+      const TerangaApp(
+        configurationError:
+            'Impossible de démarrer la connexion. Veuillez relancer l’application.',
+      ),
+    );
+  }
+}
 
 const green = Color(0xFF0D6B3D);
 const sand = Color(0xFFFAFBF8);
 
 class TerangaApp extends StatelessWidget {
-  const TerangaApp({super.key});
+  const TerangaApp({super.key, this.repository, this.configurationError});
+  final AnnoncesRepository? repository;
+  final String? configurationError;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Teranga Immo',
@@ -28,61 +67,17 @@ class TerangaApp extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
     ),
-    home: const HomeShell(),
+    home: HomeShell(
+      repository: repository,
+      configurationError: configurationError,
+    ),
   );
 }
-
-class Home {
-  final String title, district, type, price, description;
-  final int rent, rooms;
-  final Color color;
-  const Home(
-    this.title,
-    this.district,
-    this.type,
-    this.price,
-    this.rent,
-    this.rooms,
-    this.description,
-    this.color,
-  );
-}
-
-const homes = [
-  Home(
-    'Un appartement pour se sentir chez soi',
-    'Ouakam',
-    'Appartement',
-    '180 000',
-    180000,
-    2,
-    'Un séjour lumineux, deux chambres et un balcon. Exemple fictif pour découvrir le parcours de recherche.',
-    Color(0xFFD9E3D5),
-  ),
-  Home(
-    'Un studio, votre nouveau départ',
-    'Sacré-Cœur',
-    'Studio',
-    '95 000',
-    95000,
-    1,
-    'Un espace compact avec coin cuisine et salle d’eau. Exemple fictif, aucun logement réellement proposé.',
-    Color(0xFFE8D8C2),
-  ),
-  Home(
-    'De la place pour toute la famille',
-    'Yoff',
-    'Maison',
-    '300 000',
-    300000,
-    3,
-    'Une maison avec séjour, trois chambres et cour. Exemple fictif pour la démonstration.',
-    Color(0xFFD3DFE4),
-  ),
-];
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  const HomeShell({super.key, this.repository, this.configurationError});
+  final AnnoncesRepository? repository;
+  final String? configurationError;
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
@@ -91,26 +86,116 @@ class _HomeShellState extends State<HomeShell> {
   int page = 0;
   String district = '', type = 'Tous';
   int? budget, rooms;
-  List<Home> results = homes;
+  List<Home> results = [];
+  bool loading = false;
+  String? loadError;
+  int requestId = 0;
+  bool get connected =>
+      widget.repository != null || widget.configurationError != null;
+  final cityController = TextEditingController();
   final districtController = TextEditingController();
   final budgetController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (connected) {
+      loadAnnouncements();
+    } else {
+      results = homes;
+    }
+  }
+
+  Future<void> loadAnnouncements() async {
+    final current = ++requestId;
+    setState(() {
+      loading = true;
+      loadError = null;
+      results = [];
+    });
+    if (widget.repository == null) {
+      setState(() {
+        loading = false;
+        loadError = widget.configurationError;
+      });
+      return;
+    }
+    try {
+      final data = await widget.repository!.search(
+        AnnouncementFilters(
+          city: cityController.text,
+          district: district,
+          type: type,
+          maxRent: budget,
+        ),
+      );
+      if (!mounted || current != requestId) return;
+      setState(() {
+        results = data;
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted || current != requestId) return;
+      setState(() {
+        loading = false;
+        loadError =
+            'Impossible de charger les annonces. Vérifiez votre connexion et réessayez.';
+      });
+    }
+  }
+
+  Widget remoteStatus() => Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      children: [
+        if (loading)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: CircularProgressIndicator(),
+          ),
+        Text(
+          loading
+              ? 'Chargement des annonces…'
+              : loadError ??
+                    'Aucune annonce approuvée ne correspond à votre recherche.',
+          textAlign: TextAlign.center,
+        ),
+        if (loadError != null && widget.repository != null)
+          TextButton(
+            onPressed: loadAnnouncements,
+            child: const Text('Réessayer'),
+          ),
+      ],
+    ),
+  );
+
+  @override
   void dispose() {
+    cityController.dispose();
     districtController.dispose();
     budgetController.dispose();
     super.dispose();
   }
 
-  void detail(Home home) => Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => DetailPage(home: home)));
+  void detail(Home home) => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => DetailPage(home: home)));
 
   @override
   Widget build(BuildContext context) {
     final pages = [
       HomeLanding(
         onSearch: () => setState(() => page = 1),
-        onDetail: () => detail(homes.first),
+        onDetail: () {
+          if (!connected) {
+            detail(homes.first);
+          } else if (results.isNotEmpty) {
+            detail(results.first);
+          }
+        },
+        connected: connected,
+        announcement: connected && results.isNotEmpty ? results.first : null,
+        status: remoteStatus(),
       ),
       search(),
       placeholder(
@@ -128,7 +213,7 @@ class _HomeShellState extends State<HomeShell> {
       placeholder(
         Icons.person_outline,
         'Bienvenue chez Teranga Immo',
-        'Un projet BK Technologies. Les comptes seront disponibles au jalon 4. Identité visuelle provisoire : logo et maquettes à intégrer.',
+        'Un projet BK Technologies. Les comptes seront disponibles au jalon 4.',
         'Découvrir les logements',
       ),
     ];
@@ -150,7 +235,7 @@ class _HomeShellState extends State<HomeShell> {
             ),
       body: Column(
         children: [
-          if (page != 0)
+          if (page != 0 && !connected)
             Container(
               width: double.infinity,
               color: const Color(0xFFFFE9B2),
@@ -231,7 +316,7 @@ class _HomeShellState extends State<HomeShell> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${h.price} FCFA / mois',
+                              h.monthlyPrice,
                               style: const TextStyle(
                                 color: green,
                                 fontWeight: FontWeight.w800,
@@ -247,10 +332,8 @@ class _HomeShellState extends State<HomeShell> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text('Dakar · ${h.district}'),
-                            Text(
-                              '${h.type} · ${h.rooms} chambre${h.rooms > 1 ? 's' : ''}',
-                            ),
+                            Text(h.location),
+                            Text('${h.type} · ${h.roomsLabel}'),
                             const SizedBox(height: 14),
                             OutlinedButton(
                               onPressed: () => detail(h),
@@ -277,9 +360,22 @@ class _HomeShellState extends State<HomeShell> {
         style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 8),
-      const Text('Filtres appliqués uniquement aux exemples fictifs de Dakar.'),
+      Text(
+        connected
+            ? 'Annonces approuvées · jusqu’à 100 résultats récents.'
+            : 'Filtres appliqués uniquement aux exemples fictifs de Dakar.',
+      ),
       const SizedBox(height: 24),
-      const Text('Ville : Dakar'),
+      if (connected)
+        TextField(
+          controller: cityController,
+          decoration: const InputDecoration(
+            labelText: 'Ville',
+            hintText: 'Toutes les villes',
+          ),
+        )
+      else
+        const Text('Ville : Dakar'),
       const SizedBox(height: 12),
       TextField(
         controller: districtController,
@@ -314,7 +410,12 @@ class _HomeShellState extends State<HomeShell> {
       DropdownButtonFormField<int>(
         initialValue: rooms ?? 0,
         key: ValueKey('rooms-$rooms'),
-        decoration: const InputDecoration(labelText: 'Nombre de chambres'),
+        decoration: InputDecoration(
+          labelText: 'Nombre de chambres',
+          helperText: connected
+              ? 'Information non disponible dans ces annonces.'
+              : null,
+        ),
         items: [0, 1, 2, 3]
             .map(
               (v) => DropdownMenuItem(
@@ -323,7 +424,9 @@ class _HomeShellState extends State<HomeShell> {
               ),
             )
             .toList(),
-        onChanged: (v) => setState(() => rooms = v == 0 ? null : v),
+        onChanged: connected
+            ? null
+            : (v) => setState(() => rooms = v == 0 ? null : v),
       ),
       const SizedBox(height: 16),
       Wrap(
@@ -344,37 +447,48 @@ class _HomeShellState extends State<HomeShell> {
               setState(() {
                 budget = parsed;
                 district = districtController.text.trim().toLowerCase();
+                if (connected) return;
                 results = homes
                     .where(
                       (h) =>
                           h.district.toLowerCase().contains(district) &&
-                          (budget == null || h.rent <= budget!) &&
+                          (budget == null ||
+                              (h.rent != null && h.rent! <= budget!)) &&
                           (type == 'Tous' || h.type == type) &&
                           (rooms == null || h.rooms == rooms),
                     )
                     .toList();
               });
+              if (connected) loadAnnouncements();
             },
             child: const Text('Rechercher'),
           ),
           TextButton(
-            onPressed: () => setState(() {
-              districtController.clear();
-              budgetController.clear();
-              district = '';
-              budget = null;
-              rooms = null;
-              type = 'Tous';
-              results = homes;
-            }),
+            onPressed: () {
+              setState(() {
+                cityController.clear();
+                districtController.clear();
+                budgetController.clear();
+                district = '';
+                budget = null;
+                rooms = null;
+                type = 'Tous';
+                results = connected ? [] : homes;
+              });
+              if (connected) loadAnnouncements();
+            },
             child: const Text('Effacer les filtres'),
           ),
         ],
       ),
       const SizedBox(height: 24),
-      Text('${results.length} résultat(s) de démonstration'),
+      Text(
+        '${results.length} résultat(s)${connected ? '' : ' de démonstration'}',
+      ),
       const SizedBox(height: 12),
-      if (results.isEmpty)
+      if (connected && (loading || loadError != null || results.isEmpty))
+        remoteStatus()
+      else if (results.isEmpty)
         const Padding(
           padding: EdgeInsets.all(24),
           child: Text(
@@ -439,17 +553,21 @@ class HomeArt extends StatelessWidget {
             color: green.withValues(alpha: .65),
           ),
         ),
-        const Positioned(
-          left: 12,
-          top: 12,
-          child: Chip(
-            label: Text('Exemple fictif', style: TextStyle(fontSize: 11)),
+        if (home.isDemo)
+          const Positioned(
+            left: 12,
+            top: 12,
+            child: Chip(
+              label: Text('Exemple fictif', style: TextStyle(fontSize: 11)),
+            ),
           ),
-        ),
-        const Positioned(
+        Positioned(
           right: 12,
           bottom: 8,
-          child: Text('Illustration', style: TextStyle(fontSize: 11)),
+          child: Text(
+            home.isDemo ? 'Illustration' : 'Photo non renseignée',
+            style: const TextStyle(fontSize: 11),
+          ),
         ),
       ],
     ),
@@ -462,7 +580,7 @@ class DetailPage extends StatelessWidget {
   void explain(BuildContext context, String text) => showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Mode démonstration'),
+      title: Text(home.isDemo ? 'Mode démonstration' : 'Information'),
       content: Text(text),
       actions: [
         TextButton(
@@ -481,9 +599,11 @@ class DetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            const Text(
-              'DÉMONSTRATION · Aucune annonce réelle',
-              style: TextStyle(fontWeight: FontWeight.bold, color: green),
+            Text(
+              home.isDemo
+                  ? 'DÉMONSTRATION · Aucune annonce réelle'
+                  : 'Annonce approuvée',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: green),
             ),
             const SizedBox(height: 16),
             ClipRRect(
@@ -497,7 +617,7 @@ class DetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              '${home.price} FCFA / mois',
+              home.monthlyPrice,
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -505,7 +625,7 @@ class DetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text('Dakar · ${home.district} · ${home.rooms} chambre(s)'),
+            Text('${home.location} · ${home.roomsLabel}'),
             const SizedBox(height: 24),
             const Text(
               'Le logement',
@@ -514,28 +634,40 @@ class DetailPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(home.description),
             const SizedBox(height: 16),
-            const Text(
-              'Disponibilité : fictive\nÉquipements et conditions : non renseignés dans cet exemple.',
+            Text(
+              home.isDemo
+                  ? 'Disponibilité : fictive\nÉquipements et conditions : non renseignés dans cet exemple.'
+                  : 'Disponibilité, équipements et conditions : non renseignés.',
             ),
             const SizedBox(height: 24),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Comprendre le niveau de contrôle',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Cet exemple n’a fait l’objet d’aucun contrôle.\n\nDéclarée par le propriétaire : informations fournies par l’annonceur.\nInformations contrôlées : les éléments réellement examinés seront précisés.\nVérifiée par Teranga Immo : le périmètre et la date de vérification seront explicités.\n\nUne mise en avant Premium ne constitue jamais une vérification.',
-                    ),
-                  ],
+            if (!home.isDemo)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(18),
+                  child: Text(
+                    'Niveau de contrôle non renseigné. Une approbation de publication ne constitue pas une vérification sur place.',
+                  ),
+                ),
+              )
+            else
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Comprendre le niveau de contrôle',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Cet exemple n’a fait l’objet d’aucun contrôle.\n\nDéclarée par le propriétaire : informations fournies par l’annonceur.\nInformations contrôlées : les éléments réellement examinés seront précisés.\nVérifiée par Teranga Immo : le périmètre et la date de vérification seront explicités.\n\nUne mise en avant Premium ne constitue jamais une vérification.',
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 20),
             Wrap(
               spacing: 12,
@@ -544,7 +676,7 @@ class DetailPage extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: () => explain(
                     context,
-                    'Les favoris et la connexion seront disponibles au jalon 4. Aucun favori n’est enregistré dans ce prototype.',
+                    'Les favoris et la connexion ne sont pas encore disponibles. Aucun favori n’est enregistré.',
                   ),
                   icon: const Icon(Icons.favorite_border),
                   label: const Text('Ajouter aux favoris'),
@@ -552,7 +684,9 @@ class DetailPage extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => explain(
                     context,
-                    'Ce logement est fictif : aucun propriétaire ne peut être contacté.',
+                    home.isDemo
+                        ? 'Ce logement est fictif : aucun propriétaire ne peut être contacté.'
+                        : 'Coordonnées de contact non renseignées pour cette annonce.',
                   ),
                   icon: const Icon(Icons.chat_bubble_outline),
                   label: const Text('Contacter'),

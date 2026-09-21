@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teranga_immo/main.dart';
+import 'package:teranga_immo/annonces_repository.dart';
+import 'package:teranga_immo/home.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +21,87 @@ void main() {
       fonts.addFont(rootBundle.load(asset));
     }
     await fonts.load();
+  });
+
+  testWidgets('Supabase : chargement puis liste vide, sans démonstration', (
+    tester,
+  ) async {
+    final pending = Completer<List<Home>>();
+    await tester.pumpWidget(
+      TerangaApp(repository: TestAnnoncesRepository((_) => pending.future)),
+    );
+    expect(find.text('Chargement des annonces…'), findsOneWidget);
+    expect(find.text('EXEMPLE FICTIF'), findsNothing);
+    expect(find.text('Un appartement pour se sentir chez soi'), findsNothing);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Rechercher'),
+      ),
+    );
+    await tester.pump();
+    pending.complete([]);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Aucune annonce approuvée ne correspond à votre recherche.'),
+      findsOneWidget,
+    );
+    expect(find.text('0 résultat(s)'), findsOneWidget);
+    expect(find.text('Voir l’annonce'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Supabase : erreur, nouvelle tentative et détail sans données fictives',
+    (tester) async {
+      var calls = 0;
+      final repository = TestAnnoncesRepository((_) async {
+        if (++calls == 1) throw StateError('Connexion indisponible');
+        return [
+          Home.fromAnnouncement({
+            'id': 'live',
+            'ville': 'Thiès',
+            'quartier': 'Centre',
+            'type_logement': 'Maison',
+            'loyer_mensuel': 220000,
+          }),
+        ];
+      });
+      await tester.pumpWidget(TerangaApp(repository: repository));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Impossible de charger les annonces. Vérifiez votre connexion et réessayez.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('EXEMPLE FICTIF'), findsNothing);
+      await tapVisible(tester, find.text('Réessayer'));
+      expect(find.text('Maison à Thiès'), findsOneWidget);
+      expect(find.text('Photo non renseignée'), findsOneWidget);
+      expect(find.text('2 chambres'), findsNothing);
+      await tapVisible(
+        tester,
+        find.widgetWithText(FilledButton, 'Voir l’annonce'),
+      );
+      expect(find.text('Maison à Thiès'), findsOneWidget);
+      expect(find.text('Description non renseignée.'), findsOneWidget);
+      expect(find.text('DÉMONSTRATION · Aucune annonce réelle'), findsNothing);
+      expect(calls, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('Configuration invalide : aucun repli vers la démonstration', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const TerangaApp(configurationError: 'Configuration invalide.'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Configuration invalide.'), findsOneWidget);
+    expect(find.text('EXEMPLE FICTIF'), findsNothing);
+    expect(find.text('Voir l’annonce'), findsNothing);
   });
 
   testWidgets('Accueil mobile sans débordement et logo original chargé', (
@@ -138,4 +222,11 @@ Future<void> tapVisible(WidgetTester tester, Finder target) async {
   expect(target.hitTestable(), findsOneWidget);
   await tester.tap(target.hitTestable());
   await tester.pumpAndSettle();
+}
+
+class TestAnnoncesRepository implements AnnoncesRepository {
+  TestAnnoncesRepository(this.fetch);
+  final Future<List<Home>> Function(AnnouncementFilters) fetch;
+  @override
+  Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
 }

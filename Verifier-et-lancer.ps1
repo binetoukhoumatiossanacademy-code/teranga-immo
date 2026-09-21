@@ -2,12 +2,17 @@
 [CmdletBinding()]
 param(
     [string]$SdkPath = (Join-Path $PSScriptRoot '..\..\work\f'),
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'config\supabase.local.json'),
     [switch]$VerificationSeulement
 )
 $ErrorActionPreference = 'Stop'
 $taskDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $sdkDirectory = [IO.Path]::GetFullPath($SdkPath)
 $flutterCommand = Join-Path $sdkDirectory 'bin\flutter.bat'
+if (!(Test-Path -LiteralPath $ConfigPath)) {
+    throw 'Configuration locale absente. Copier config/supabase.example.json vers config/supabase.local.json et renseigner les valeurs publiques.'
+}
+$configFile = (Resolve-Path -LiteralPath $ConfigPath).Path
 if (!(Test-Path -LiteralPath $flutterCommand)) {
     throw "SDK Flutter absent : fournissez son dossier avec -SdkPath."
 }
@@ -32,7 +37,11 @@ function Invoke-FlutterCheck {
     try {
         # PowerShell 5 ne doit pas interrompre la capture au premier stderr natif.
         $ErrorActionPreference = 'Continue'
-        & $flutterCommand @FlutterArguments 2>&1 | Tee-Object -FilePath $logFile -Append
+        & $flutterCommand @FlutterArguments 2>&1 | ForEach-Object {
+            $line = $_.ToString()
+            Add-Content -LiteralPath $logFile -Value $line -Encoding utf8
+            Write-Output $line
+        }
         $checkExit = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorPreference
@@ -44,9 +53,9 @@ Push-Location $PSScriptRoot
 try {
     Invoke-FlutterCheck 'flutter-pub-get' @('pub', 'get')
     Invoke-FlutterCheck 'flutter-analyze' @('analyze')
-    Invoke-FlutterCheck 'flutter-test' @('test', '--reporter', 'expanded')
+    Invoke-FlutterCheck 'flutter-test' @('test', '--reporter', 'expanded', "--dart-define-from-file=$configFile")
     if (!$VerificationSeulement) {
-        & $flutterCommand run -d edge --web-port 8765
+        & $flutterCommand run -d edge --web-port 8765 "--dart-define-from-file=$configFile"
         if ($LASTEXITCODE -ne 0) { throw 'Lancement Web en échec.' }
     }
 } finally {

@@ -10,3 +10,5 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+config/*.local.json
+verification/
