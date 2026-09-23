@@ -1,0 +1,68 @@
+name: Compiler Teranga Immo Web
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+      - name: Préparer les paramètres publics
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          from urllib.parse import urlparse
+          url = os.environ['SUPABASE_URL']
+          key = os.environ['SUPABASE_PUBLISHABLE_KEY']
+          if urlparse(url).scheme != 'https' or not urlparse(url).hostname:
+              raise SystemExit('Configurer la variable SUPABASE_URL dans GitHub Actions.')
+          if not key.startswith('sb_publishable_'):
+              raise SystemExit('Configurer uniquement une clé publique sb_publishable_.')
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'supabase.json'
+          path.write_text(json.dumps({'SUPABASE_URL': url, 'SUPABASE_PUBLISHABLE_KEY': key}))
+          PY
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze --no-pub
+      - run: flutter test --no-pub --reporter expanded
+      - name: Compiler la version Web
+        run: flutter build web --release --no-pub --dart-define-from-file="$RUNNER_TEMP/supabase.json"
+      - name: Contrôler les fichiers à télécharger
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path('build/web')
+          assert (root / 'index.html').is_file(), 'Compilation absente'
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              if path.name.endswith(('.local.json', '.log')) or path.name.startswith('.env') or '.git' in path.parts:
+                  raise SystemExit(f'Fichier local interdit : {path}')
+              data = path.read_bytes()
+              if re.search(rb'sb_secret_[A-Za-z0-9_-]{10,}', data):
+                  raise SystemExit(f'Clé secrète détectée : {path}')
+          print('Contrôle terminé. La clé publique est intégrée au JavaScript par conception.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: teranga-immo-web
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Supprimer les paramètres temporaires
+        if: always()
+        run: rm -f "$RUNNER_TEMP/supabase.json"

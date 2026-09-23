@@ -6,6 +6,8 @@ import 'home_landing.dart';
 import 'home.dart';
 import 'app_config.dart';
 import 'annonces_repository.dart';
+import 'account_service.dart';
+import 'account_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,13 +25,28 @@ Future<void> main() async {
     return;
   }
   try {
+    final callbackUri = Uri.base;
+    final recoveryLink =
+        callbackUri.queryParameters['auth'] == 'recovery' ||
+        callbackUri.fragment.contains('type=recovery');
     await Supabase.initialize(
       url: config.url,
       publishableKey: config.publishableKey,
+      authOptions: const FlutterAuthClientOptions(
+        persistSession: true,
+        autoRefreshToken: true,
+      ),
     );
     runApp(
       TerangaApp(
         repository: SupabaseAnnoncesRepository(Supabase.instance.client),
+        account: AccountController(
+          SupabaseAccountGateway(
+            Supabase.instance.client,
+            redirectUrl: callbackUri.toString().split(RegExp(r'[?#]')).first,
+          ),
+          recovering: recoveryLink,
+        ),
       ),
     );
   } catch (_) {
@@ -46,7 +63,13 @@ const green = Color(0xFF0D6B3D);
 const sand = Color(0xFFFAFBF8);
 
 class TerangaApp extends StatelessWidget {
-  const TerangaApp({super.key, this.repository, this.configurationError});
+  const TerangaApp({
+    super.key,
+    this.repository,
+    this.configurationError,
+    this.account,
+  });
+  final AccountController? account;
   final AnnoncesRepository? repository;
   final String? configurationError;
   @override
@@ -68,6 +91,7 @@ class TerangaApp extends StatelessWidget {
       ),
     ),
     home: HomeShell(
+      account: account,
       repository: repository,
       configurationError: configurationError,
     ),
@@ -75,7 +99,13 @@ class TerangaApp extends StatelessWidget {
 }
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, this.repository, this.configurationError});
+  const HomeShell({
+    super.key,
+    this.repository,
+    this.configurationError,
+    this.account,
+  });
+  final AccountController? account;
   final AnnoncesRepository? repository;
   final String? configurationError;
   @override
@@ -99,10 +129,18 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    widget.account?.addListener(accountChanged);
+    if (widget.account?.recovering == true) page = 4;
     if (connected) {
       loadAnnouncements();
     } else {
       results = homes;
+    }
+  }
+
+  void accountChanged() {
+    if (mounted && widget.account?.recovering == true) {
+      setState(() => page = 4);
     }
   }
 
@@ -171,6 +209,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    widget.account?.removeListener(accountChanged);
     cityController.dispose();
     districtController.dispose();
     budgetController.dispose();
@@ -210,12 +249,7 @@ class _HomeShellState extends State<HomeShell> {
         'La publication sera disponible au jalon 5. Chaque annonce sera examinée avant son affichage public.',
         'Voir les exemples',
       ),
-      placeholder(
-        Icons.person_outline,
-        'Bienvenue chez Teranga Immo',
-        'Un projet BK Technologies. Les comptes seront disponibles au jalon 4.',
-        'Découvrir les logements',
-      ),
+      AccountPage(account: widget.account),
     ];
     return Scaffold(
       appBar: page == 0
