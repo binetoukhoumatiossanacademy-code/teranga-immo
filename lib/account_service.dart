@@ -1,37 +1,39 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-class AccountProfile {
-  const AccountProfile({
-    required this.name,
-    required this.type,
-    this.agency = '',
-  });
-  final String name, type, agency;
-  Map<String, dynamic> toJson() => {
-    'nom': name.trim(),
-    'type_compte': type,
-    'nom_agence': type == 'agence' ? agency.trim() : null,
-  };
-  factory AccountProfile.fromJson(Map<String, dynamic> data) => AccountProfile(
-    name: data['nom'] as String? ?? '',
-    type: data['type_compte'] == 'agence' ? 'agence' : 'proprietaire',
-    agency: data['nom_agence'] as String? ?? '',
-  );
-}
+import 'models/account_role.dart';
+import 'models/user_profile.dart';
 
 abstract class AccountGateway {
   User? get user;
   Stream<AuthState> get changes;
-  Future<void> signUp(String email, String password, AccountProfile profile);
+  Future<void> signUp(
+    String email,
+    String password, {
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  });
   Future<void> signIn(String email, String password);
   Future<void> signOut();
   Future<void> resend(String email);
   Future<void> reset(String email);
   Future<void> updatePassword(String password);
-  Future<AccountProfile?> loadProfile(String id);
-  Future<void> saveProfile(String id, AccountProfile profile);
+  Future<UserProfile?> loadProfile(String id);
+  Future<UserProfile> createProfile(
+    String id, {
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  });
+  Future<UserProfile> updateProfile(
+    UserProfile current, {
+    required String name,
+    String? agencyName,
+    String? phoneWhatsApp,
+  });
 }
 
 class SupabaseAccountGateway implements AccountGateway {
@@ -45,13 +47,21 @@ class SupabaseAccountGateway implements AccountGateway {
   @override
   Future<void> signUp(
     String email,
-    String password,
-    AccountProfile profile,
-  ) async {
+    String password, {
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) async {
     await client.auth.signUp(
       email: email,
       password: password,
-      data: profile.toJson(),
+      data: UserProfile.publicFields(
+        name: name,
+        role: role,
+        agencyName: agencyName,
+        phoneWhatsApp: phoneWhatsApp,
+      ),
       emailRedirectTo: redirectUrl,
     );
   }
@@ -83,22 +93,68 @@ class SupabaseAccountGateway implements AccountGateway {
   }
 
   @override
-  Future<AccountProfile?> loadProfile(String id) async {
+  Future<UserProfile?> loadProfile(String id) async {
     final row = await client
         .schema('public')
         .from('profils')
-        .select('nom,type_compte,nom_agence')
+        .select(
+          'id,type_compte,nom,nom_agence,telephone_whatsapp,created_at,updated_at',
+        )
         .eq('id', id)
         .maybeSingle();
-    return row == null ? null : AccountProfile.fromJson(row);
+    return row == null ? null : UserProfile.fromJson(row);
   }
 
   @override
-  Future<void> saveProfile(String id, AccountProfile profile) async {
-    await client.schema('public').from('profils').upsert({
-      'id': id,
-      ...profile.toJson(),
-    }, onConflict: 'id');
+  Future<UserProfile> createProfile(
+    String id, {
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) async {
+    final row = await client
+        .schema('public')
+        .from('profils')
+        .insert({
+          'id': id,
+          ...UserProfile.publicFields(
+            name: name,
+            role: role,
+            agencyName: agencyName,
+            phoneWhatsApp: phoneWhatsApp,
+          ),
+        })
+        .select(
+          'id,type_compte,nom,nom_agence,telephone_whatsapp,created_at,updated_at',
+        )
+        .single();
+    return UserProfile.fromJson(row);
+  }
+
+  @override
+  Future<UserProfile> updateProfile(
+    UserProfile current, {
+    required String name,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) async {
+    final row = await client
+        .schema('public')
+        .from('profils')
+        .update(
+          current.mutableFields(
+            name: name,
+            agencyName: agencyName,
+            phoneWhatsApp: phoneWhatsApp,
+          ),
+        )
+        .eq('id', current.id)
+        .select(
+          'id,type_compte,nom,nom_agence,telephone_whatsapp,created_at,updated_at',
+        )
+        .single();
+    return UserProfile.fromJson(row);
   }
 }
 
@@ -127,7 +183,7 @@ class AccountController extends ChangeNotifier {
   final AccountGateway gateway;
   late final StreamSubscription<AuthState> _subscription;
   User? user;
-  AccountProfile? profile;
+  UserProfile? profile;
   bool recovering, loading = false;
   String? message;
   int _request = 0;
@@ -159,12 +215,34 @@ class AccountController extends ChangeNotifier {
     }
   }
 
-  Future<void> save(AccountProfile value) async {
+  Future<void> save({
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) async {
     final id = user?.id;
     if (id == null) throw StateError('Connexion requise');
-    await gateway.saveProfile(id, value);
+    final current = profile;
+    if (current != null && role != current.role) {
+      throw StateError('Le rôle du profil ne peut pas être modifié');
+    }
+    final saved = current == null
+        ? await gateway.createProfile(
+            id,
+            name: name,
+            role: role,
+            agencyName: agencyName,
+            phoneWhatsApp: phoneWhatsApp,
+          )
+        : await gateway.updateProfile(
+            current,
+            name: name,
+            agencyName: agencyName,
+            phoneWhatsApp: phoneWhatsApp,
+          );
     if (!_disposed && user?.id == id) {
-      profile = value;
+      profile = saved;
       message = null;
       _notify();
     }

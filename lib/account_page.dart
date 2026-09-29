@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'account_service.dart';
+import 'models/account_role.dart';
+import 'models/user_profile.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key, required this.account});
@@ -16,10 +18,13 @@ class _AccountPageState extends State<AccountPage> {
   final confirmation = TextEditingController();
   final name = TextEditingController();
   final agency = TextEditingController();
-  String mode = 'login', type = 'proprietaire';
+  final phone = TextEditingController();
+  String mode = 'login';
+  AccountRole role = AccountRole.proprietaire;
   String? message;
+  String? metadataRoleError;
   bool busy = false;
-  AccountProfile? _shownProfile;
+  UserProfile? _shownProfile;
   String? _shownId;
 
   @override
@@ -34,12 +39,32 @@ class _AccountPageState extends State<AccountPage> {
     if (_shownId != account?.user?.id || _shownProfile != account?.profile) {
       _shownId = account?.user?.id;
       _shownProfile = account?.profile;
-      final data =
-          account?.profile ??
-          AccountProfile.fromJson(account?.user?.userMetadata ?? {});
-      name.text = data.name;
-      agency.text = data.agency;
-      type = data.type;
+      final profile = account?.profile;
+      final metadata = account?.user?.userMetadata ?? const <String, dynamic>{};
+      name.text = profile?.name ?? _metadataText(metadata, 'nom');
+      agency.text =
+          profile?.agencyName ?? _metadataText(metadata, 'nom_agence');
+      phone.text =
+          profile?.phoneWhatsApp ??
+          _metadataText(metadata, 'telephone_whatsapp');
+      if (profile != null) {
+        role = profile.role;
+        metadataRoleError = null;
+      } else {
+        final metadataRole = metadata['type_compte'];
+        if (metadataRole == null || metadataRole == '') {
+          role = AccountRole.proprietaire;
+          metadataRoleError = null;
+        } else {
+          try {
+            role = AccountRole.fromDatabase(metadataRole);
+            metadataRoleError = null;
+          } on FormatException {
+            metadataRoleError =
+                'Ce compte ne peut pas créer un profil depuis l’application publique.';
+          }
+        }
+      }
       password.clear();
       confirmation.clear();
       message = null;
@@ -54,7 +79,14 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void dispose() {
     widget.account?.removeListener(changed);
-    for (final controller in [email, password, confirmation, name, agency]) {
+    for (final controller in [
+      email,
+      password,
+      confirmation,
+      name,
+      agency,
+      phone,
+    ]) {
       controller.dispose();
     }
     super.dispose();
@@ -143,24 +175,31 @@ class _AccountPageState extends State<AccountPage> {
     ),
   );
 
-  List<Widget> profileFields() => [
+  List<Widget> profileFields({required bool roleLocked}) => [
     field('Nom', name),
+    field('Téléphone / WhatsApp', phone, required: false),
     Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: DropdownButtonFormField<String>(
-        initialValue: type,
-        decoration: const InputDecoration(labelText: 'Type de compte'),
-        items: const [
-          DropdownMenuItem(value: 'proprietaire', child: Text('Propriétaire')),
-          DropdownMenuItem(value: 'agence', child: Text('Agence')),
-        ],
-        onChanged: busy ? null : (value) => setState(() => type = value!),
+      child: DropdownButtonFormField<AccountRole>(
+        initialValue: role,
+        key: ValueKey('role-${role.databaseValue}-$roleLocked'),
+        decoration: InputDecoration(
+          labelText: 'Type de compte',
+          helperText: roleLocked ? 'Le rôle ne peut plus être modifié.' : null,
+        ),
+        items: AccountRole.values
+            .map(
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.label)),
+            )
+            .toList(),
+        onChanged: busy || roleLocked
+            ? null
+            : (value) => setState(() => role = value!),
       ),
     ),
-    if (type == 'agence') field('Nom de l’agence', agency),
+    if (role == AccountRole.agence) field('Nom de l’agence', agency),
   ];
-  AccountProfile get value =>
-      AccountProfile(name: name.text, type: type, agency: agency.text);
 
   Widget submit(String label, Future<void> Function() action, String success) =>
       FilledButton(
@@ -237,16 +276,27 @@ class _AccountPageState extends State<AccountPage> {
                     Text(account.user!.email ?? ''),
                     const SizedBox(height: 16),
                     if (!account.loading && account.message == null) ...[
-                      if (account.profile == null)
+                      if (metadataRoleError != null)
+                        Text(metadataRoleError!)
+                      else if (account.profile == null)
                         const Text(
                           'Complétez votre profil pour terminer votre inscription.',
                         ),
-                      ...profileFields(),
-                      submit(
-                        'Enregistrer mon profil',
-                        () => account.save(value),
-                        'Profil enregistré.',
-                      ),
+                      if (metadataRoleError == null) ...[
+                        ...profileFields(roleLocked: account.profile != null),
+                        submit(
+                          'Enregistrer mon profil',
+                          () => account.save(
+                            name: name.text,
+                            role: role,
+                            agencyName: role == AccountRole.agence
+                                ? agency.text
+                                : null,
+                            phoneWhatsApp: phone.text,
+                          ),
+                          'Profil enregistré.',
+                        ),
+                      ],
                     ],
                   ] else ...[
                     if (mode == 'confirm')
@@ -262,7 +312,7 @@ class _AccountPageState extends State<AccountPage> {
                         confirmation,
                         secret: true,
                       ),
-                      ...profileFields(),
+                      ...profileFields(roleLocked: false),
                     ],
                     if (mode == 'login') ...[
                       submit('Se connecter', () async {
@@ -292,7 +342,12 @@ class _AccountPageState extends State<AccountPage> {
                           await account.gateway.signUp(
                             email.text.trim(),
                             password.text,
-                            value,
+                            name: name.text,
+                            role: role,
+                            agencyName: role == AccountRole.agence
+                                ? agency.text
+                                : null,
+                            phoneWhatsApp: phone.text,
                           );
                           password.clear();
                           confirmation.clear();
@@ -345,4 +400,9 @@ class _AccountPageState extends State<AccountPage> {
       ),
     );
   }
+}
+
+String _metadataText(Map<String, dynamic> metadata, String key) {
+  final value = metadata[key];
+  return value is String ? value.trim() : '';
 }

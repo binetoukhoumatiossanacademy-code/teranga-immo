@@ -56,16 +56,72 @@ final class UserProfile {
 
   Map<String, dynamic> toProfileRow() => {
     'id': id,
-    'type_compte': role.databaseValue,
-    'nom': name,
-    'nom_agence': role == AccountRole.agence ? agencyName : null,
-    'telephone_whatsapp': phoneWhatsApp,
+    ...publicFields(
+      name: name,
+      role: role,
+      agencyName: agencyName,
+      phoneWhatsApp: phoneWhatsApp,
+    ),
   };
 
-  Map<String, dynamic> toAuthMetadata() => {
-    'type_compte': role.databaseValue,
-    'nom': name,
-    'nom_agence': role == AccountRole.agence ? agencyName : null,
-    'telephone_whatsapp': phoneWhatsApp,
-  };
+  Map<String, dynamic> toAuthMetadata() => publicFields(
+    name: name,
+    role: role,
+    agencyName: agencyName,
+    phoneWhatsApp: phoneWhatsApp,
+  );
+
+  Map<String, dynamic> mutableFields({
+    required String name,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) {
+    final fields = publicFields(
+      name: name,
+      role: role,
+      agencyName: agencyName,
+      phoneWhatsApp: phoneWhatsApp,
+    );
+    fields.remove('type_compte');
+    return fields;
+  }
+
+  static Map<String, dynamic> publicFields({
+    required String name,
+    required AccountRole role,
+    String? agencyName,
+    String? phoneWhatsApp,
+  }) {
+    final normalizedName = name.trim();
+    final normalizedAgency = agencyName?.trim();
+    final normalizedPhone = phoneWhatsApp?.trim();
+    if (normalizedName.isEmpty || normalizedName.length > 120) {
+      throw ArgumentError.value(name, 'name', 'Nom invalide');
+    }
+    if (role == AccountRole.agence) {
+      if (normalizedAgency == null ||
+          normalizedAgency.isEmpty ||
+          normalizedAgency.length > 160) {
+        throw ArgumentError.value(
+          agencyName,
+          'agencyName',
+          'Nom d’agence obligatoire et limité à 160 caractères',
+        );
+      }
+    } else if (normalizedAgency != null && normalizedAgency.isNotEmpty) {
+      throw ArgumentError.value(
+        agencyName,
+        'agencyName',
+        'Réservé aux comptes agence',
+      );
+    }
+    return {
+      'type_compte': role.databaseValue,
+      'nom': normalizedName,
+      'nom_agence': role == AccountRole.agence ? normalizedAgency : null,
+      'telephone_whatsapp': normalizedPhone?.isEmpty == true
+          ? null
+          : normalizedPhone,
+    };
+  }
 }
