@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -158,6 +159,20 @@ class FakeAccountGateway implements AccountGateway {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    // Utiliser les métriques de Poppins, comme l’application et widget_test.dart.
+    final fonts = FontLoader('Poppins');
+    for (final asset in [
+      'assets/fonts/Poppins-Regular.ttf',
+      'assets/fonts/Poppins-SemiBold.ttf',
+      'assets/fonts/Poppins-Bold.ttf',
+    ]) {
+      fonts.addFont(rootBundle.load(asset));
+    }
+    await fonts.load();
+  });
   late FakeAccountGateway gateway;
   late AccountController account;
   setUp(() {
@@ -230,7 +245,7 @@ void main() {
     );
     await tester.tap(find.byType(DropdownButtonFormField<AccountRole>));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Agence').last);
+    await tester.tap(find.text(AccountRole.agence.label).last);
     await tester.pumpAndSettle();
     await tester.enterText(field('Nom de l’agence'), 'Agence Awa');
     await tap(tester, 'Créer mon compte');
