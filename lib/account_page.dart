@@ -5,7 +5,12 @@ import 'models/account_role.dart';
 import 'models/user_profile.dart';
 
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key, required this.account});
+  const AccountPage({
+    super.key,
+    required this.account,
+    this.initialRole = AccountRole.proprietaire,
+  });
+  final AccountRole initialRole;
   final AccountController? account;
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -30,6 +35,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
+    role = widget.initialRole;
     widget.account?.addListener(changed);
     sync();
   }
@@ -53,7 +59,7 @@ class _AccountPageState extends State<AccountPage> {
       } else {
         final metadataRole = metadata['type_compte'];
         if (metadataRole == null || metadataRole == '') {
-          role = AccountRole.proprietaire;
+          role = widget.initialRole;
           metadataRoleError = null;
         } else {
           try {

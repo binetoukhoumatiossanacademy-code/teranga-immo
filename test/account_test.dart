@@ -429,6 +429,9 @@ void main() {
     (tester) async {
       account = AccountController(gateway);
       await tester.pumpWidget(TerangaApp(account: account));
+      await tester.ensureVisible(find.text('Continuer'));
+      await tester.tap(find.text('Continuer'));
+      await tester.pump();
       await tester.pumpAndSettle();
       expect(
         find.text('Trouvez votre logement\navec plus de confiance.'),

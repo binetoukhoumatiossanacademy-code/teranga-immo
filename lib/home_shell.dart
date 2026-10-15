@@ -5,6 +5,8 @@ import 'account_service.dart';
 import 'annonces_repository.dart';
 import 'detail_page.dart';
 import 'home.dart';
+import 'models/account_role.dart';
+import 'welcome_page.dart';
 import 'home_art.dart';
 import 'home_landing.dart';
 import 'teranga_theme.dart';
@@ -25,6 +27,8 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int page = 0;
+  bool profileChosen = false;
+  AccountRole selectedRole = AccountRole.locataire;
   String district = '', type = 'Tous';
   int? budget, rooms;
   List<Home> results = [];
@@ -41,7 +45,10 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     widget.account?.addListener(accountChanged);
-    if (widget.account?.recovering == true) page = 4;
+    if (widget.account?.recovering == true) {
+      profileChosen = true;
+      page = 4;
+    }
     if (connected) {
       loadAnnouncements();
     } else {
@@ -51,7 +58,10 @@ class _HomeShellState extends State<HomeShell> {
 
   void accountChanged() {
     if (mounted && widget.account?.recovering == true) {
-      setState(() => page = 4);
+      setState(() {
+        profileChosen = true;
+        page = 4;
+      });
     }
   }
 
@@ -133,6 +143,15 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (!profileChosen) {
+      return WelcomePage(
+        onContinue: (role) => setState(() {
+          selectedRole = role;
+          profileChosen = true;
+          page = role == AccountRole.locataire ? 0 : 4;
+        }),
+      );
+    }
     final pages = [
       HomeLanding(
         onSearch: () => setState(() => page = 1),
@@ -160,7 +179,7 @@ class _HomeShellState extends State<HomeShell> {
         'La publication sera disponible au jalon 5. Chaque annonce sera examinée avant son affichage public.',
         'Voir les exemples',
       ),
-      AccountPage(account: widget.account),
+      AccountPage(account: widget.account, initialRole: selectedRole),
     ];
     return Scaffold(
       appBar: page == 0
