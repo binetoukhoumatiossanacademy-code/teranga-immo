@@ -7,6 +7,7 @@ import 'detail_page.dart';
 import 'home.dart';
 import 'models/account_role.dart';
 import 'welcome_page.dart';
+import 'tenant_flow.dart';
 import 'home_art.dart';
 import 'home_landing.dart';
 import 'teranga_theme.dart';
@@ -28,6 +29,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int page = 0;
   bool profileChosen = false;
+  bool tenantFlowActive = false;
   AccountRole selectedRole = AccountRole.locataire;
   String district = '', type = 'Tous';
   int? budget, rooms;
@@ -47,9 +49,10 @@ class _HomeShellState extends State<HomeShell> {
     widget.account?.addListener(accountChanged);
     if (widget.account?.recovering == true) {
       profileChosen = true;
+      tenantFlowActive = false;
       page = 4;
     }
-    if (connected) {
+    if (connected && widget.account?.recovering == true) {
       loadAnnouncements();
     } else {
       results = homes;
@@ -60,6 +63,7 @@ class _HomeShellState extends State<HomeShell> {
     if (mounted && widget.account?.recovering == true) {
       setState(() {
         profileChosen = true;
+        tenantFlowActive = false;
         page = 4;
       });
     }
@@ -145,11 +149,22 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     if (!profileChosen) {
       return WelcomePage(
-        onContinue: (role) => setState(() {
-          selectedRole = role;
-          profileChosen = true;
-          page = role == AccountRole.locataire ? 0 : 4;
-        }),
+        onContinue: (role) {
+          setState(() {
+            selectedRole = role;
+            profileChosen = true;
+            tenantFlowActive = role == AccountRole.locataire;
+            page = role == AccountRole.locataire ? 0 : 4;
+          });
+          if (role != AccountRole.locataire && connected) loadAnnouncements();
+        },
+      );
+    }
+    if (tenantFlowActive) {
+      return TenantFlow(
+        repository: widget.repository,
+        configurationError: widget.configurationError,
+        account: widget.account,
       );
     }
     final pages = [

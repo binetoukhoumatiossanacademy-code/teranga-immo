@@ -24,7 +24,7 @@ void main() {
   });
 
   testWidgets(
-    'Bienvenue : profils, choix et accueil existant sans débordement mobile',
+    'Bienvenue : Locataire ouvre la présentation sans débordement mobile',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -37,15 +37,12 @@ void main() {
       expect(find.text('Propriétaire'), findsOneWidget);
       expect(find.text('Agence immobilière'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
-      expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.text('Continuer'));
-      await tester.tap(find.text('Continuer'));
-      await tester.pumpAndSettle();
-      expect(find.byType(NavigationBar), findsOneWidget);
+      await tapVisible(tester, find.text('Continuer'));
       expect(
-        find.text('Trouvez votre logement\navec plus de confiance.'),
+        find.text('Trouvez votre\nlogement plus\nsimplement'),
         findsOneWidget,
       );
+      expect(find.byType(NavigationBar), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -62,6 +59,8 @@ void main() {
         await tester.ensureVisible(find.text('Continuer'));
         await tester.ensureVisible(find.text('Continuer'));
         await tester.tap(find.text('Continuer'));
+        await tester.pump();
+
         await tester.pumpAndSettle();
         expect(
           find.text(
@@ -79,6 +78,59 @@ void main() {
       },
     );
   }
+  for (final width in [320.0, 390.0]) {
+    testWidgets(
+      'Présentation Locataire : parcours et recherche à ${width.toInt()} pixels',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(const TerangaApp());
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Continuer'));
+        await tester.tap(find.text('Continuer'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Trouvez votre\nlogement plus\nsimplement'),
+          findsOneWidget,
+        );
+        expect(find.text('Comment ça marche ?'), findsOneWidget);
+        expect(find.byType(NavigationBar), findsNothing);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Image &&
+                widget.image is AssetImage &&
+                (widget.image as AssetImage).assetName ==
+                    'assets/homes/locataire_illustration.png',
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.ensureVisible(find.text('En savoir plus →'));
+        await tester.tap(find.text('En savoir plus →'));
+        await tester.pumpAndSettle();
+        expect(find.text('Comprendre le niveau de contrôle'), findsOneWidget);
+        await tester.tap(find.text('Compris'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Chercher votre logement'));
+        await tester.tap(find.text('Chercher votre logement'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<NavigationBar>(find.byType(NavigationBar))
+              .selectedIndex,
+          1,
+        );
+        expect(
+          find.text('Trouvez le logement qui\nvous convient'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets('Supabase : chargement puis liste vide, sans démonstration', (
     tester,
   ) async {
@@ -86,8 +138,13 @@ void main() {
     await tester.pumpWidget(
       TerangaApp(repository: TestAnnoncesRepository((_) => pending.future)),
     );
+    await tester.ensureVisible(find.text('Propriétaire'));
+    await tester.tap(find.text('Propriétaire'));
+    await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
+    await tester.pump();
+    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     expect(find.text('Chargement des annonces…'), findsOneWidget);
     expect(find.text('EXEMPLE FICTIF'), findsNothing);
@@ -127,8 +184,13 @@ void main() {
         ];
       });
       await tester.pumpWidget(TerangaApp(repository: repository));
+      await tester.ensureVisible(find.text('Propriétaire'));
+      await tester.tap(find.text('Propriétaire'));
+      await tester.pump();
       await tester.ensureVisible(find.text('Continuer'));
       await tester.tap(find.text('Continuer'));
+      await tester.pump();
+      await openExistingHomeAfterIntroduction(tester);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
@@ -160,8 +222,13 @@ void main() {
     await tester.pumpWidget(
       const TerangaApp(configurationError: 'Configuration invalide.'),
     );
+    await tester.ensureVisible(find.text('Propriétaire'));
+    await tester.tap(find.text('Propriétaire'));
+    await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
+    await tester.pump();
+    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     await tester.pumpAndSettle();
     expect(find.text('Configuration invalide.'), findsOneWidget);
@@ -179,8 +246,13 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const TerangaApp());
+      await tester.ensureVisible(find.text('Propriétaire'));
+      await tester.tap(find.text('Propriétaire'));
+      await tester.pump();
       await tester.ensureVisible(find.text('Continuer'));
       await tester.tap(find.text('Continuer'));
+      await tester.pump();
+      await openExistingHomeAfterIntroduction(tester);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
@@ -202,8 +274,13 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const TerangaApp());
+    await tester.ensureVisible(find.text('Propriétaire'));
+    await tester.tap(find.text('Propriétaire'));
+    await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
+    await tester.pump();
+    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     for (final label in [
       'Favoris',
@@ -229,8 +306,13 @@ void main() {
 
   testWidgets('Un budget sans résultat peut être effacé', (tester) async {
     await tester.pumpWidget(const TerangaApp());
+    await tester.ensureVisible(find.text('Propriétaire'));
+    await tester.tap(find.text('Propriétaire'));
+    await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
+    await tester.pump();
+    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Où cherchez-vous ?'));
@@ -245,8 +327,13 @@ void main() {
 
   testWidgets('La fiche explique que le contact est fictif', (tester) async {
     await tester.pumpWidget(const TerangaApp());
+    await tester.ensureVisible(find.text('Propriétaire'));
+    await tester.tap(find.text('Propriétaire'));
+    await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
+    await tester.pump();
+    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     await tester.pumpAndSettle();
     final card = find.widgetWithText(FilledButton, 'Voir l’annonce');
@@ -306,4 +393,13 @@ class TestAnnoncesRepository implements AnnoncesRepository {
   final Future<List<Home>> Function(AnnouncementFilters) fetch;
   @override
   Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
+}
+
+// Les tests historiques continuent de vérifier les écrans existants Propriétaire.
+Future<void> openExistingHomeAfterIntroduction(WidgetTester tester) async {
+  final bars = find.byType(NavigationBar);
+  if (bars.evaluate().isEmpty) return;
+  if (tester.widget<NavigationBar>(bars).destinations.length != 5) return;
+  await tester.tap(find.descendant(of: bars, matching: find.text('Accueil')));
+  await tester.pump();
 }
