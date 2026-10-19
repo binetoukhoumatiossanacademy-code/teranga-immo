@@ -47,7 +47,7 @@ void main() {
     },
   );
 
-  for (final role in ['Propriétaire', 'Agence immobilière']) {
+  for (final role in ['Agence immobilière']) {
     testWidgets(
       'Bienvenue : $role mène au Profil existant sans créer de compte',
       (tester) async {
@@ -138,8 +138,8 @@ void main() {
     await tester.pumpWidget(
       TerangaApp(repository: TestAnnoncesRepository((_) => pending.future)),
     );
-    await tester.ensureVisible(find.text('Propriétaire'));
-    await tester.tap(find.text('Propriétaire'));
+    await tester.ensureVisible(find.text('Agence immobilière'));
+    await tester.tap(find.text('Agence immobilière'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
@@ -184,8 +184,8 @@ void main() {
         ];
       });
       await tester.pumpWidget(TerangaApp(repository: repository));
-      await tester.ensureVisible(find.text('Propriétaire'));
-      await tester.tap(find.text('Propriétaire'));
+      await tester.ensureVisible(find.text('Agence immobilière'));
+      await tester.tap(find.text('Agence immobilière'));
       await tester.pump();
       await tester.ensureVisible(find.text('Continuer'));
       await tester.tap(find.text('Continuer'));
@@ -222,8 +222,8 @@ void main() {
     await tester.pumpWidget(
       const TerangaApp(configurationError: 'Configuration invalide.'),
     );
-    await tester.ensureVisible(find.text('Propriétaire'));
-    await tester.tap(find.text('Propriétaire'));
+    await tester.ensureVisible(find.text('Agence immobilière'));
+    await tester.tap(find.text('Agence immobilière'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
@@ -246,8 +246,8 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const TerangaApp());
-      await tester.ensureVisible(find.text('Propriétaire'));
-      await tester.tap(find.text('Propriétaire'));
+      await tester.ensureVisible(find.text('Agence immobilière'));
+      await tester.tap(find.text('Agence immobilière'));
       await tester.pump();
       await tester.ensureVisible(find.text('Continuer'));
       await tester.tap(find.text('Continuer'));
@@ -274,8 +274,8 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Propriétaire'));
-    await tester.tap(find.text('Propriétaire'));
+    await tester.ensureVisible(find.text('Agence immobilière'));
+    await tester.tap(find.text('Agence immobilière'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
@@ -306,8 +306,8 @@ void main() {
 
   testWidgets('Un budget sans résultat peut être effacé', (tester) async {
     await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Propriétaire'));
-    await tester.tap(find.text('Propriétaire'));
+    await tester.ensureVisible(find.text('Agence immobilière'));
+    await tester.tap(find.text('Agence immobilière'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
@@ -327,8 +327,8 @@ void main() {
 
   testWidgets('La fiche explique que le contact est fictif', (tester) async {
     await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Propriétaire'));
-    await tester.tap(find.text('Propriétaire'));
+    await tester.ensureVisible(find.text('Agence immobilière'));
+    await tester.tap(find.text('Agence immobilière'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continuer'));
     await tester.tap(find.text('Continuer'));
@@ -395,7 +395,7 @@ class TestAnnoncesRepository implements AnnoncesRepository {
   Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
 }
 
-// Les tests historiques continuent de vérifier les écrans existants Propriétaire.
+// Les tests historiques continuent de vérifier les écrans historiques accessibles par le parcours Agence.
 Future<void> openExistingHomeAfterIntroduction(WidgetTester tester) async {
   final bars = find.byType(NavigationBar);
   if (bars.evaluate().isEmpty) return;

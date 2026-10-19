@@ -8,6 +8,7 @@ import 'home.dart';
 import 'models/account_role.dart';
 import 'welcome_page.dart';
 import 'tenant_flow.dart';
+import 'owner_flow.dart';
 import 'home_art.dart';
 import 'home_landing.dart';
 import 'teranga_theme.dart';
@@ -30,6 +31,7 @@ class _HomeShellState extends State<HomeShell> {
   int page = 0;
   bool profileChosen = false;
   bool tenantFlowActive = false;
+  bool ownerFlowActive = false;
   AccountRole selectedRole = AccountRole.locataire;
   String district = '', type = 'Tous';
   int? budget, rooms;
@@ -50,6 +52,7 @@ class _HomeShellState extends State<HomeShell> {
     if (widget.account?.recovering == true) {
       profileChosen = true;
       tenantFlowActive = false;
+      ownerFlowActive = false;
       page = 4;
     }
     if (connected && widget.account?.recovering == true) {
@@ -64,6 +67,7 @@ class _HomeShellState extends State<HomeShell> {
       setState(() {
         profileChosen = true;
         tenantFlowActive = false;
+        ownerFlowActive = false;
         page = 4;
       });
     }
@@ -154,6 +158,7 @@ class _HomeShellState extends State<HomeShell> {
             selectedRole = role;
             profileChosen = true;
             tenantFlowActive = role == AccountRole.locataire;
+            ownerFlowActive = role == AccountRole.proprietaire;
             page = role == AccountRole.locataire ? 0 : 4;
           });
           if (role != AccountRole.locataire && connected) loadAnnouncements();
@@ -165,6 +170,16 @@ class _HomeShellState extends State<HomeShell> {
         repository: widget.repository,
         configurationError: widget.configurationError,
         account: widget.account,
+      );
+    }
+    if (ownerFlowActive) {
+      return OwnerFlow(
+        account: widget.account,
+        onAgency: () => setState(() {
+          ownerFlowActive = false;
+          selectedRole = AccountRole.agence;
+          page = 4;
+        }),
       );
     }
     final pages = [
