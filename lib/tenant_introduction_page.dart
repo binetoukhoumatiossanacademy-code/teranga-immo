@@ -1,3 +1,4 @@
+import 'responsive_layout.dart';
 import 'package:flutter/material.dart';
 
 const _green = Color(0xFF00664B);
@@ -14,7 +15,9 @@ class TenantIntroductionPage extends StatelessWidget {
       child: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 1180,
+            ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
               child: Column(
@@ -57,158 +60,171 @@ class TenantIntroductionPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Trouvez votre\nlogement plus\nsimplement',
-                    style: TextStyle(
-                      fontSize: 36,
-                      height: 1.08,
-                      letterSpacing: -.9,
-                      fontWeight: FontWeight.w700,
-                      color: _green,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'Recherchez selon vos besoins, consultez les informations importantes et le niveau de contrôle des annonces avant de vous déplacer.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.45,
-                      color: Color(0xFF4E5261),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/homes/locataire_illustration.png',
-                      fit: BoxFit.contain,
-                      semanticLabel:
-                          'Une main tient les clés d’un logement lumineux au Sénégal',
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Comment ça marche ?',
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w700,
-                      color: _green,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  step(
-                    '1',
-                    'Recherchez',
-                    'Indiquez où et quel logement vous recherchez.',
-                    Icons.search,
-                  ),
-                  const SizedBox(height: 16),
-                  step(
-                    '2',
-                    'Comparez',
-                    'Consultez le prix, les photos, les caractéristiques et le niveau de contrôle.',
-                    Icons.copy_outlined,
-                  ),
-                  const SizedBox(height: 16),
-                  step(
-                    '3',
-                    'Contactez',
-                    'Contactez le propriétaire ou l’agence si le logement vous intéresse.',
-                    Icons.chat_bubble_outline,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFFDF9D)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.shield_outlined,
-                          color: _gold,
-                          size: 29,
+                  ResponsiveSections(
+                    first: [
+                      const Text(
+                        'Trouvez votre\nlogement plus\nsimplement',
+                        style: TextStyle(
+                          fontSize: 36,
+                          height: 1.08,
+                          letterSpacing: -.9,
+                          fontWeight: FontWeight.w700,
+                          color: _green,
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'Chaque annonce indique clairement son niveau de contrôle.',
-                            style: TextStyle(
-                              fontSize: 10,
-                              height: 1.45,
-                              color: Color(0xFF4E5261),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            minimumSize: const Size(0, 44),
-                            foregroundColor: _green,
-                          ),
-                          onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text(
-                                'Comprendre le niveau de contrôle',
-                              ),
-                              content: const Text(
-                                'Déclarée par le propriétaire : informations fournies par l’annonceur.\n\nInformations contrôlées : les éléments réellement examinés seront précisés.\n\nVérifiée par Teranga Immo : le périmètre et la date de vérification seront explicités.\n\nUne mise en avant Premium ne constitue jamais une vérification.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Compris'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          child: const Text(
-                            'En savoir plus →',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  FilledButton(
-                    onPressed: onSearch,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _green,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(54),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
                       ),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Chercher votre logement',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Recherchez selon vos besoins, consultez les informations importantes et le niveau de contrôle des annonces avant de vous déplacer.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.45,
+                          color: Color(0xFF4E5261),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/homes/locataire_illustration.png',
+                          fit: BoxFit.contain,
+                          height: MediaQuery.sizeOf(context).width >= 900
+                              ? 320
+                              : null,
+                          semanticLabel:
+                              'Une main tient les clés d’un logement lumineux au Sénégal',
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
+                    second: [
+                      const Text(
+                        'Comment ça marche ?',
+                        style: TextStyle(
+                          fontSize: 23,
+                          fontWeight: FontWeight.w700,
+                          color: _green,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      step(
+                        '1',
+                        'Recherchez',
+                        'Indiquez où et quel logement vous recherchez.',
+                        Icons.search,
+                      ),
+                      const SizedBox(height: 16),
+                      step(
+                        '2',
+                        'Comparez',
+                        'Consultez le prix, les photos, les caractéristiques et le niveau de contrôle.',
+                        Icons.copy_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      step(
+                        '3',
+                        'Contactez',
+                        'Contactez le propriétaire ou l’agence si le logement vous intéresse.',
+                        Icons.chat_bubble_outline,
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFFDF9D)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.shield_outlined,
+                              color: _gold,
+                              size: 29,
                             ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Chaque annonce indique clairement son niveau de contrôle.',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  height: 1.45,
+                                  color: Color(0xFF4E5261),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                minimumSize: const Size(0, 44),
+                                foregroundColor: _green,
+                              ),
+                              onPressed: () => showDialog<void>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text(
+                                    'Comprendre le niveau de contrôle',
+                                  ),
+                                  content: const Text(
+                                    'Déclarée par le propriétaire : informations fournies par l’annonceur.\n\nInformations contrôlées : les éléments réellement examinés seront précisés.\n\nVérifiée par Teranga Immo : le périmètre et la date de vérification seront explicités.\n\nUne mise en avant Premium ne constitue jamais une vérification.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Compris'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              child: const Text(
+                                'En savoir plus →',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      ResponsiveAction(
+                        child: FilledButton(
+                          onPressed: onSearch,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _green,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(54),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
+                            ),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Chercher votre logement',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward, size: 22),
+                            ],
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward, size: 22),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),

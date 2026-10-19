@@ -31,13 +31,24 @@ Future<void> enterSearch(
     TerangaApp(repository: repository, configurationError: configurationError),
   );
   await tester.pumpAndSettle();
+  if (tester.view.physicalSize.width / tester.view.devicePixelRatio >= 900) {
+    expect(
+      tester.getRect(find.byType(Image).first).right,
+      lessThan(tester.getRect(find.text('Locataire')).left),
+    );
+  }
+  expect(tester.takeException(), isNull);
   await tapTenant(tester, find.text('Continuer'));
   expect(find.text('Comment ça marche ?'), findsOneWidget);
   await tapTenant(tester, find.text('Chercher votre logement'));
 }
 
-Finder nav(String text) =>
-    find.descendant(of: find.byType(NavigationBar), matching: find.text(text));
+Finder nav(String text) => find.descendant(
+  of: find.byWidgetPredicate(
+    (widget) => widget is NavigationBar || widget is NavigationRail,
+  ),
+  matching: find.text(text),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +64,7 @@ void main() {
     await loader.load();
   });
 
-  for (final width in [320.0, 390.0, 1100.0]) {
+  for (final width in [320.0, 390.0, 768.0, 1100.0, 1440.0]) {
     testWidgets(
       'Locataire : six écrans, favoris, galerie et contact désactivé à $width pixels',
       (tester) async {
@@ -79,6 +90,21 @@ void main() {
         await tapTenant(tester, find.text('Trouver mon logement →'));
         expect(find.text('Logements trouvés'), findsOneWidget);
         expect(find.text('3 résultat(s)'), findsOneWidget);
+        expect(
+          find.byType(NavigationRail),
+          width >= 900 ? findsOneWidget : findsNothing,
+        );
+        if (width >= 700) {
+          final cards = find.byType(Card);
+          expect(
+            tester.getRect(cards.at(0)).top,
+            tester.getRect(cards.at(1)).top,
+          );
+          expect(
+            tester.getRect(cards.at(0)).right,
+            lessThan(tester.getRect(cards.at(1)).left),
+          );
+        }
         await tapTenant(tester, find.byTooltip('Ajouter aux favoris').first);
         await tester.tap(nav('Favoris'));
         await tester.pumpAndSettle();

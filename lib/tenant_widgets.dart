@@ -283,7 +283,9 @@ Future<void> showTenantContact(
   isScrollControlled: true,
   showDragHandle: true,
   backgroundColor: tenantBackground,
-  constraints: const BoxConstraints(maxWidth: 440),
+  constraints: BoxConstraints(
+    maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 720,
+  ),
   shape: const RoundedRectangleBorder(
     borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
   ),

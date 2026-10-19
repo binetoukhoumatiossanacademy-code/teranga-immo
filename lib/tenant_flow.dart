@@ -1,3 +1,4 @@
+import 'responsive_layout.dart';
 import 'package:flutter/material.dart';
 import 'account_page.dart';
 import 'account_service.dart';
@@ -208,71 +209,129 @@ class _TenantFlowState extends State<TenantFlow> {
       ),
       TenantScreen.introduction => const SizedBox.shrink(),
     };
+    final desktop = MediaQuery.sizeOf(context).width >= 900;
+    final selectedIndex = screen == TenantScreen.favorites
+        ? 2
+        : screen == TenantScreen.profile
+        ? 3
+        : 1;
+    void navigate(int index) => go(
+      [
+        TenantScreen.introduction,
+        TenantScreen.search,
+        TenantScreen.favorites,
+        TenantScreen.profile,
+      ][index],
+    );
     return Scaffold(
       backgroundColor: tenantBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          controller: scroll,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (screen != TenantScreen.detail) const TenantHeader(),
-                    content,
-                  ],
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (desktop)
+            SafeArea(
+              child: NavigationRail(
+                backgroundColor: tenantBackground,
+                selectedIndex: selectedIndex,
+                labelType: NavigationRailLabelType.all,
+                onDestinationSelected: navigate,
+                destinations: const [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home_outlined),
+                    label: Text('Accueil'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.search),
+                    label: Text('Rechercher'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.favorite_border),
+                    label: Text('Favoris'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.person_outline),
+                    label: Text('Profil'),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                controller: scroll,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width < 700
+                          ? 440
+                          : 1240,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (screen != TenantScreen.detail)
+                            const TenantHeader(),
+                          content,
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: NavigationBar(
-            backgroundColor: Colors.white,
-            indicatorColor: const Color(0xFFE1F0E5),
-            height: 68,
-            selectedIndex: screen == TenantScreen.favorites
-                ? 2
-                : screen == TenantScreen.profile
-                ? 3
-                : 1,
-            onDestinationSelected: (index) => go(
-              [
-                TenantScreen.introduction,
-                TenantScreen.search,
-                TenantScreen.favorites,
-                TenantScreen.profile,
-              ][index],
+      bottomNavigationBar: desktop
+          ? null
+          : Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 1240,
+                ),
+                child: NavigationBar(
+                  backgroundColor: Colors.white,
+                  indicatorColor: const Color(0xFFE1F0E5),
+                  height: 68,
+                  selectedIndex: screen == TenantScreen.favorites
+                      ? 2
+                      : screen == TenantScreen.profile
+                      ? 3
+                      : 1,
+                  onDestinationSelected: (index) => go(
+                    [
+                      TenantScreen.introduction,
+                      TenantScreen.search,
+                      TenantScreen.favorites,
+                      TenantScreen.profile,
+                    ][index],
+                  ),
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      label: 'Accueil',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.search),
+                      label: 'Rechercher',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.favorite_border),
+                      label: 'Favoris',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.person_outline),
+                      label: 'Profil',
+                    ),
+                  ],
+                ),
+              ),
             ),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                label: 'Accueil',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.search),
-                label: 'Rechercher',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.favorite_border),
-                label: 'Favoris',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                label: 'Profil',
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -343,179 +402,202 @@ class _TenantFlowState extends State<TenantFlow> {
     children: [
       heading('Trouvez le logement qui\nvous convient'),
       const SizedBox(height: 18),
-      TextField(
-        controller: keyword,
-        maxLines: 3,
-        decoration: input('Décrivez le logement que vous recherchez…').copyWith(
-          prefixIcon: const Icon(Icons.chat_bubble_outline, color: tenantGreen),
-          labelText: 'Votre recherche',
-        ),
-      ),
-      const SizedBox(height: 7),
-      const Text(
-        'Exemple : Appartement meublé à Ngor, 4 chambres, maximum 400 000 FCFA/mois.',
-        style: TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
-      ),
-      const SizedBox(height: 7),
-      const Text(
-        'Recherche par mots-clés dans les informations disponibles. Les phrases ne sont pas converties automatiquement en critères.',
-        style: TextStyle(fontSize: 10, color: tenantInk),
-      ),
-      const Divider(height: 28),
-      heading('Ou précisez vos critères', size: 21),
-      const SizedBox(height: 5),
-      const Text(
-        'Écrivez, choisissez vos critères ou combinez les deux.',
-        style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-      ),
-      section('Localisation', Icons.location_on, [
-        label('Région'),
-        DropdownButtonFormField<String>(
-          decoration: input('Choisir une région'),
-          hint: const Text(
-            'Choisir une région',
-            style: TextStyle(fontSize: 12),
-          ),
-          items: const [],
-          onChanged: null,
-        ),
-        const Padding(
-          padding: EdgeInsets.only(top: 5),
-          child: Text(
-            'Filtre région non disponible dans la source actuelle.',
-            style: TextStyle(fontSize: 10, color: tenantInk),
-          ),
-        ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  label('Ville'),
-                  TextField(
-                    controller: city,
-                    decoration: input(
-                      'Choisir une ville',
-                    ).copyWith(labelText: 'Ville'),
-                    style: const TextStyle(fontSize: 12),
+      ResponsiveSections(
+        first: [
+          TextField(
+            controller: keyword,
+            maxLines: 3,
+            decoration: input('Décrivez le logement que vous recherchez…')
+                .copyWith(
+                  prefixIcon: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: tenantGreen,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  label('Quartier'),
-                  TextField(
-                    controller: district,
-                    decoration: input(
-                      'Choisir un quartier',
-                    ).copyWith(labelText: 'Quartier'),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ]),
-      section('Votre logement', Icons.home, [
-        label('Type de logement'),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final value in ['Appartement', 'Studio', 'Maison'])
-              ChoiceChip(
-                label: Text(value, style: const TextStyle(fontSize: 11)),
-                selected: type == value,
-                onSelected: (selected) =>
-                    setState(() => type = selected ? value : 'Tous'),
-                selectedColor: const Color(0xFFE2F1E5),
-              ),
-          ],
-        ),
-        label('Prix maximum'),
-        TextField(
-          controller: rent,
-          keyboardType: TextInputType.number,
-          decoration: input('Votre budget maximum').copyWith(
-            labelText: 'Loyer maximum (FCFA)',
-            suffixText: 'FCFA/mois',
-            errorText: rentError,
+                  labelText: 'Votre recherche',
+                ),
           ),
-          style: const TextStyle(fontSize: 12),
-        ),
-        label('Nombre de chambres'),
-        Wrap(
-          spacing: 5,
-          runSpacing: 5,
-          children: [
-            for (final value in [1, 2, 3, 4, 5])
-              ChoiceChip(
-                label: Text(value == 5 ? '5+' : '$value'),
-                selected: rooms == value,
-                onSelected: connected
-                    ? null
-                    : (selected) =>
-                          setState(() => rooms = selected ? value : null),
-                selectedColor: const Color(0xFFE2F1E5),
-              ),
-          ],
-        ),
-        if (connected)
+          const SizedBox(height: 7),
           const Text(
-            'Information non disponible dans ces annonces.',
+            'Exemple : Appartement meublé à Ngor, 4 chambres, maximum 400 000 FCFA/mois.',
+            style: TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 7),
+          const Text(
+            'Recherche par mots-clés dans les informations disponibles. Les phrases ne sont pas converties automatiquement en critères.',
             style: TextStyle(fontSize: 10, color: tenantInk),
           ),
-        label('Ameublement'),
-        Wrap(
-          spacing: 5,
-          runSpacing: 5,
-          children: const [
-            ChoiceChip(
-              label: Text('Meublé', style: TextStyle(fontSize: 11)),
-              selected: false,
+          const Divider(height: 28),
+          heading('Ou précisez vos critères', size: 21),
+          const SizedBox(height: 5),
+          const Text(
+            'Écrivez, choisissez vos critères ou combinez les deux.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+          section('Localisation', Icons.location_on, [
+            label('Région'),
+            DropdownButtonFormField<String>(
+              decoration: input('Choisir une région'),
+              hint: const Text(
+                'Choisir une région',
+                style: TextStyle(fontSize: 12),
+              ),
+              items: const [],
+              onChanged: null,
             ),
-            ChoiceChip(
-              label: Text('Non meublé', style: TextStyle(fontSize: 11)),
-              selected: false,
+            const Padding(
+              padding: EdgeInsets.only(top: 5),
+              child: Text(
+                'Filtre région non disponible dans la source actuelle.',
+                style: TextStyle(fontSize: 10, color: tenantInk),
+              ),
             ),
-            ChoiceChip(
-              label: Text('Peu importe', style: TextStyle(fontSize: 11)),
-              selected: true,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      label('Ville'),
+                      TextField(
+                        controller: city,
+                        decoration: input(
+                          'Choisir une ville',
+                        ).copyWith(labelText: 'Ville'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      label('Quartier'),
+                      TextField(
+                        controller: district,
+                        decoration: input(
+                          'Choisir un quartier',
+                        ).copyWith(labelText: 'Quartier'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        const Text(
-          'Ameublement non renseigné : filtre désactivé.',
-          style: TextStyle(fontSize: 10, color: tenantInk),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: clear,
-            child: const Text(
-              'Effacer les critères',
-              style: TextStyle(
-                fontSize: 12,
-                decoration: TextDecoration.underline,
+          ]),
+        ],
+        second: [
+          section('Votre logement', Icons.home, [
+            label('Type de logement'),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final value in ['Appartement', 'Studio', 'Maison'])
+                  ChoiceChip(
+                    label: Text(value, style: const TextStyle(fontSize: 11)),
+                    selected: type == value,
+                    onSelected: (selected) =>
+                        setState(() => type = selected ? value : 'Tous'),
+                    selectedColor: const Color(0xFFE2F1E5),
+                  ),
+              ],
+            ),
+            label('Prix maximum'),
+            TextField(
+              controller: rent,
+              keyboardType: TextInputType.number,
+              decoration: input('Votre budget maximum').copyWith(
+                labelText: 'Loyer maximum (FCFA)',
+                suffixText: 'FCFA/mois',
+                errorText: rentError,
+              ),
+              style: const TextStyle(fontSize: 12),
+            ),
+            label('Nombre de chambres'),
+            Wrap(
+              spacing: 5,
+              runSpacing: 5,
+              children: [
+                for (final value in [1, 2, 3, 4, 5])
+                  ChoiceChip(
+                    label: Text(value == 5 ? '5+' : '$value'),
+                    selected: rooms == value,
+                    onSelected: connected
+                        ? null
+                        : (selected) =>
+                              setState(() => rooms = selected ? value : null),
+                    selectedColor: const Color(0xFFE2F1E5),
+                  ),
+              ],
+            ),
+            if (connected)
+              const Text(
+                'Information non disponible dans ces annonces.',
+                style: TextStyle(fontSize: 10, color: tenantInk),
+              ),
+            label('Ameublement'),
+            Wrap(
+              spacing: 5,
+              runSpacing: 5,
+              children: const [
+                ChoiceChip(
+                  label: Text('Meublé', style: TextStyle(fontSize: 11)),
+                  selected: false,
+                ),
+                ChoiceChip(
+                  label: Text('Non meublé', style: TextStyle(fontSize: 11)),
+                  selected: false,
+                ),
+                ChoiceChip(
+                  label: Text('Peu importe', style: TextStyle(fontSize: 11)),
+                  selected: true,
+                ),
+              ],
+            ),
+            const Text(
+              'Ameublement non renseigné : filtre désactivé.',
+              style: TextStyle(fontSize: 10, color: tenantInk),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: clear,
+                child: const Text(
+                  'Effacer les critères',
+                  style: TextStyle(
+                    fontSize: 12,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ]),
+        ],
+      ),
+      const SizedBox(height: 18),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.sizeOf(context).width >= 700
+                ? 420
+                : double.infinity,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: search,
+              style: tenantPrimaryStyle(),
+              child: const Text(
+                'Trouver mon logement →',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
               ),
             ),
           ),
-        ),
-      ]),
-      const SizedBox(height: 18),
-      FilledButton(
-        onPressed: search,
-        style: tenantPrimaryStyle(),
-        child: const Text(
-          'Trouver mon logement →',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
         ),
       ),
       const SizedBox(height: 12),
@@ -559,27 +641,33 @@ class _TenantFlowState extends State<TenantFlow> {
                 .toList(),
           ),
         ),
-      Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => go(TenantScreen.search),
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text(
-                'Modifier la recherche',
-                style: TextStyle(fontSize: 10),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => go(TenantScreen.search),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text(
+                    'Modifier la recherche',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => go(TenantScreen.search),
+                  icon: const Icon(Icons.filter_list, size: 16),
+                  label: const Text('Filtres', style: TextStyle(fontSize: 11)),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => go(TenantScreen.search),
-              icon: const Icon(Icons.filter_list, size: 16),
-              label: const Text('Filtres', style: TextStyle(fontSize: 11)),
-            ),
-          ),
-        ],
+        ),
       ),
       const SizedBox(height: 12),
       if (!connected)
@@ -621,13 +709,17 @@ class _TenantFlowState extends State<TenantFlow> {
             style: TextStyle(fontSize: 13, color: tenantInk),
           ),
         ] else
-          for (final home in results)
-            TenantListingCard(
-              home: home,
-              favorite: favorites.containsKey(keyFor(home)),
-              onOpen: () => open(home),
-              onFavorite: () => toggleFavorite(home),
-            ),
+          ResponsiveListingGrid(
+            children: [
+              for (final home in results)
+                TenantListingCard(
+                  home: home,
+                  favorite: favorites.containsKey(keyFor(home)),
+                  onOpen: () => open(home),
+                  onFavorite: () => toggleFavorite(home),
+                ),
+            ],
+          ),
       ],
       const SizedBox(height: 12),
       const Text(
@@ -682,19 +774,25 @@ class _TenantFlowState extends State<TenantFlow> {
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => go(TenantScreen.search),
-          style: tenantPrimaryStyle(),
-          child: const Text('Chercher un logement →'),
+        ResponsiveAction(
+          child: FilledButton(
+            onPressed: () => go(TenantScreen.search),
+            style: tenantPrimaryStyle(),
+            child: const Text('Chercher un logement →'),
+          ),
         ),
       ] else
-        for (final home in favorites.values.toList())
-          TenantListingCard(
-            home: home,
-            favorite: true,
-            onOpen: () => open(home),
-            onFavorite: () => toggleFavorite(home),
-          ),
+        ResponsiveListingGrid(
+          children: [
+            for (final home in favorites.values.toList())
+              TenantListingCard(
+                home: home,
+                favorite: true,
+                onOpen: () => open(home),
+                onFavorite: () => toggleFavorite(home),
+              ),
+          ],
+        ),
     ],
   );
 }
