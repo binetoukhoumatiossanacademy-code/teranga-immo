@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teranga_immo/main.dart';
 import 'package:teranga_immo/annonces_repository.dart';
+import 'package:teranga_immo/account_service.dart';
 import 'package:teranga_immo/home.dart';
+import 'account_test.dart' as account_test;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -47,37 +49,23 @@ void main() {
     },
   );
 
-  for (final role in ['Agence immobilière']) {
-    testWidgets(
-      'Bienvenue : $role mène au Profil existant sans créer de compte',
-      (tester) async {
-        await tester.pumpWidget(const TerangaApp());
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text(role));
-        await tester.tap(find.text(role));
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text('Continuer'));
-        await tester.ensureVisible(find.text('Continuer'));
-        await tester.tap(find.text('Continuer'));
-        await tester.pump();
-
-        await tester.pumpAndSettle();
-        expect(
-          find.text(
-            'Les comptes nécessitent une connexion Supabase configurée.',
-          ),
-          findsOneWidget,
-        );
-        expect(
-          tester
-              .widget<NavigationBar>(find.byType(NavigationBar))
-              .selectedIndex,
-          4,
-        );
-        expect(tester.takeException(), isNull);
-      },
+  testWidgets('Bienvenue : Agence ouvre son authentification sans compte', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TerangaApp());
+    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Agence immobilière'));
+    await tapVisible(tester, find.text('Continuer'));
+    expect(find.text('Bienvenue dans votre\nespace agence'), findsOneWidget);
+    expect(
+      find.text(
+        'Supabase n’est pas configuré. Connexion, photos, envoi et gestion des annonces indisponibles.',
+      ),
+      findsOneWidget,
     );
-  }
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   for (final width in [320.0, 390.0]) {
     testWidgets(
       'Présentation Locataire : parcours et recherche à ${width.toInt()} pixels',
@@ -135,16 +123,10 @@ void main() {
     tester,
   ) async {
     final pending = Completer<List<Home>>();
-    await tester.pumpWidget(
-      TerangaApp(repository: TestAnnoncesRepository((_) => pending.future)),
+    await pumpLegacyHome(
+      tester,
+      repository: TestAnnoncesRepository((_) => pending.future),
     );
-    await tester.ensureVisible(find.text('Agence immobilière'));
-    await tester.tap(find.text('Agence immobilière'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Continuer'));
-    await tester.tap(find.text('Continuer'));
-    await tester.pump();
-    await openExistingHomeAfterIntroduction(tester);
     await tester.pump();
     expect(find.text('Chargement des annonces…'), findsOneWidget);
     expect(find.text('EXEMPLE FICTIF'), findsNothing);
@@ -183,14 +165,7 @@ void main() {
           }),
         ];
       });
-      await tester.pumpWidget(TerangaApp(repository: repository));
-      await tester.ensureVisible(find.text('Agence immobilière'));
-      await tester.tap(find.text('Agence immobilière'));
-      await tester.pump();
-      await tester.ensureVisible(find.text('Continuer'));
-      await tester.tap(find.text('Continuer'));
-      await tester.pump();
-      await openExistingHomeAfterIntroduction(tester);
+      await pumpLegacyHome(tester, repository: repository);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
@@ -219,16 +194,7 @@ void main() {
   testWidgets('Configuration invalide : aucun repli vers la démonstration', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      const TerangaApp(configurationError: 'Configuration invalide.'),
-    );
-    await tester.ensureVisible(find.text('Agence immobilière'));
-    await tester.tap(find.text('Agence immobilière'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Continuer'));
-    await tester.tap(find.text('Continuer'));
-    await tester.pump();
-    await openExistingHomeAfterIntroduction(tester);
+    await pumpLegacyHome(tester, configurationError: 'Configuration invalide.');
     await tester.pump();
     await tester.pumpAndSettle();
     expect(find.text('Configuration invalide.'), findsOneWidget);
@@ -245,14 +211,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(const TerangaApp());
-      await tester.ensureVisible(find.text('Agence immobilière'));
-      await tester.tap(find.text('Agence immobilière'));
-      await tester.pump();
-      await tester.ensureVisible(find.text('Continuer'));
-      await tester.tap(find.text('Continuer'));
-      await tester.pump();
-      await openExistingHomeAfterIntroduction(tester);
+      await pumpLegacyHome(tester);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
@@ -273,14 +232,7 @@ void main() {
   testWidgets('La navigation permet de visiter les cinq rubriques', (
     tester,
   ) async {
-    await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Agence immobilière'));
-    await tester.tap(find.text('Agence immobilière'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Continuer'));
-    await tester.tap(find.text('Continuer'));
-    await tester.pump();
-    await openExistingHomeAfterIntroduction(tester);
+    await pumpLegacyHome(tester);
     await tester.pump();
     for (final label in [
       'Favoris',
@@ -305,14 +257,7 @@ void main() {
   });
 
   testWidgets('Un budget sans résultat peut être effacé', (tester) async {
-    await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Agence immobilière'));
-    await tester.tap(find.text('Agence immobilière'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Continuer'));
-    await tester.tap(find.text('Continuer'));
-    await tester.pump();
-    await openExistingHomeAfterIntroduction(tester);
+    await pumpLegacyHome(tester);
     await tester.pump();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Où cherchez-vous ?'));
@@ -326,14 +271,7 @@ void main() {
   });
 
   testWidgets('La fiche explique que le contact est fictif', (tester) async {
-    await tester.pumpWidget(const TerangaApp());
-    await tester.ensureVisible(find.text('Agence immobilière'));
-    await tester.tap(find.text('Agence immobilière'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Continuer'));
-    await tester.tap(find.text('Continuer'));
-    await tester.pump();
-    await openExistingHomeAfterIntroduction(tester);
+    await pumpLegacyHome(tester);
     await tester.pump();
     await tester.pumpAndSettle();
     final card = find.widgetWithText(FilledButton, 'Voir l’annonce');
@@ -395,11 +333,32 @@ class TestAnnoncesRepository implements AnnoncesRepository {
   Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
 }
 
-// Les tests historiques continuent de vérifier les écrans historiques accessibles par le parcours Agence.
-Future<void> openExistingHomeAfterIntroduction(WidgetTester tester) async {
-  final bars = find.byType(NavigationBar);
-  if (bars.evaluate().isEmpty) return;
-  if (tester.widget<NavigationBar>(bars).destinations.length != 5) return;
-  await tester.tap(find.descendant(of: bars, matching: find.text('Accueil')));
+// Les contrôles historiques du catalogue public restent couverts par une
+// session de récupération, sans détourner le parcours Agence vers cet écran.
+Future<void> pumpLegacyHome(
+  WidgetTester tester, {
+  AnnoncesRepository? repository,
+  String? configurationError,
+}) async {
+  final gateway = account_test.FakeAccountGateway();
+  final account = AccountController(gateway, recovering: true);
+  addTearDown(account.dispose);
+  addTearDown(gateway.events.close);
+  await tester.pumpWidget(
+    TerangaApp(
+      account: account,
+      repository: repository,
+      configurationError: configurationError,
+    ),
+  );
+  // Une recherche réseau peut volontairement rester en attente dans les tests.
+  // Ne pas attendre son achèvement avant d'ouvrir le catalogue public.
+  await tester.pump();
+  await tester.tap(
+    find.descendant(
+      of: find.byType(NavigationBar),
+      matching: find.text('Accueil'),
+    ),
+  );
   await tester.pump();
 }

@@ -8,9 +8,16 @@ import 'tenant_widgets.dart';
 /// Parcours visuel propriétaire. Aucune opération d'annonce n'est simulée :
 /// le dépôt public existant ne fournit pas encore le service de gestion privée.
 class OwnerFlow extends StatefulWidget {
-  const OwnerFlow({super.key, this.account, required this.onAgency});
+  const OwnerFlow({
+    super.key,
+    this.account,
+    this.onAgency,
+    this.onOwner,
+    this.role = AccountRole.proprietaire,
+  }) : assert(role == AccountRole.proprietaire || role == AccountRole.agence);
   final AccountController? account;
-  final VoidCallback onAgency;
+  final VoidCallback? onAgency, onOwner;
+  final AccountRole role;
   @override
   State<OwnerFlow> createState() => _OwnerFlowState();
 }
@@ -23,6 +30,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
   final draftForm = GlobalKey<FormState>();
   final fields = <String, TextEditingController>{
     for (final key in [
+      'agency',
       'name',
       'phone',
       'email',
@@ -42,9 +50,16 @@ class _OwnerFlowState extends State<OwnerFlow> {
   bool furnished = false;
   DateTime? availableFrom;
   bool get authenticated => widget.account?.user != null;
-  bool get owner => widget.account?.profile?.role == AccountRole.proprietaire;
+  bool get agency => widget.role == AccountRole.agence;
+  // L'accès au profil dépend du rôle confirmé par le serveur, jamais du choix visuel.
+  bool get owner => widget.account?.profile?.role == widget.role;
+  String get badge => agency ? 'Agence' : 'Propriétaire';
+  static const missingTerms =
+      'Les conditions d’utilisation officielles ne sont pas encore fournies. Leur acceptation et l’inscription Agence sont indisponibles.';
   String get unavailable => widget.account == null
       ? 'Supabase n’est pas configuré. Connexion, photos, envoi et gestion des annonces indisponibles.'
+      : agency
+      ? 'Le service de gestion des annonces Agence n’est pas encore raccordé. Aucun envoi, publication ou retrait ne peut être effectué.'
       : 'Le service de gestion des annonces Propriétaire n’est pas encore raccordé. Aucun envoi, publication ou retrait ne peut être effectué.';
 
   @override
@@ -170,6 +185,8 @@ class _OwnerFlowState extends State<OwnerFlow> {
       validator: (value) {
         final v = value?.trim() ?? '';
         if (required && v.isEmpty) return 'Champ obligatoire';
+        if (key == 'agency' && v.length > 160) return '160 caractères maximum';
+        if (key == 'name' && v.length > 120) return '120 caractères maximum';
         if (key == 'email' &&
             !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v))
           return 'Adresse e-mail invalide';
@@ -184,6 +201,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
     ),
   );
   Future<void> authenticate() async {
+    if (agency && signup) return;
     if (!authForm.currentState!.validate() || widget.account == null || busy)
       return;
     setState(() {
@@ -197,7 +215,8 @@ class _OwnerFlowState extends State<OwnerFlow> {
           fields['email']!.text.trim(),
           fields['password']!.text,
           name: fields['name']!.text.trim(),
-          role: AccountRole.proprietaire,
+          role: widget.role,
+          agencyName: agency ? fields['agency']!.text.trim() : null,
           phoneWhatsApp: fields['phone']!.text.trim(),
         );
         if (mounted)
@@ -214,7 +233,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
         if (mounted && !owner)
           setState(
             () => message =
-                'Votre profil Propriétaire n’est pas disponible. Consultez votre compte ou réessayez.',
+                'Votre profil $badge n’est pas disponible. Consultez votre compte ou réessayez.',
           );
       }
       accountChanged();
@@ -234,7 +253,28 @@ class _OwnerFlowState extends State<OwnerFlow> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        title('Bienvenue dans votre espace propriétaire'),
+        if (agency) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Bienvenue dans votre\nespace agence',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                height: 1.15,
+                fontWeight: FontWeight.w700,
+                color: tenantGreen,
+              ),
+            ),
+          ),
+          const Text(
+            'Trouvez. Valorisez. Ensemble.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF4E5261), fontSize: 13),
+          ),
+          const SizedBox(height: 18),
+        ] else
+          title('Bienvenue dans votre espace propriétaire'),
         const Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
@@ -258,8 +298,16 @@ class _OwnerFlowState extends State<OwnerFlow> {
         ),
         const SizedBox(height: 22),
         if (signup) ...[
-          input('name', 'Nom et prénom'),
-          input('phone', 'Téléphone', keyboard: TextInputType.phone),
+          if (agency) input('agency', 'Nom de l’agence'),
+          input(
+            'name',
+            agency ? 'Nom et prénom du responsable' : 'Nom et prénom',
+          ),
+          input(
+            'phone',
+            agency ? 'Téléphone / WhatsApp' : 'Téléphone',
+            keyboard: TextInputType.phone,
+          ),
         ],
         input('email', 'E-mail', keyboard: TextInputType.emailAddress),
         const Padding(
@@ -277,12 +325,49 @@ class _OwnerFlowState extends State<OwnerFlow> {
             onPressed: widget.account == null ? null : () => go('forgot'),
             child: const Text('Mot de passe oublié ?'),
           ),
+        if (agency && signup) ...[
+          Row(
+            children: [
+              const Checkbox(value: false, onChanged: null),
+              const Text('J’accepte les ', style: TextStyle(fontSize: 11)),
+              Flexible(
+                child: TextButton(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Conditions d’utilisation'),
+                      content: const Text(missingTerms),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Fermer'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  child: const Text(
+                    'conditions d’utilisation',
+                    style: TextStyle(
+                      fontSize: 11,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const TenantNotice(missingTerms, warning: true),
+        ],
         if (widget.account == null) TenantNotice(unavailable),
         if (message != null) TenantNotice(message!, warning: true),
         if (busy) const Center(child: CircularProgressIndicator()),
         action(
-          signup ? 'Créer mon compte' : 'Se connecter',
-          widget.account == null || busy ? null : authenticate,
+          signup
+              ? (agency ? 'Créer le compte de l’agence' : 'Créer mon compte')
+              : 'Se connecter',
+          widget.account == null || busy || agency && signup
+              ? null
+              : authenticate,
         ),
         TextButton(
           onPressed: () {
@@ -292,11 +377,25 @@ class _OwnerFlowState extends State<OwnerFlow> {
           child: const Text('Consulter les écrans sans connexion'),
         ),
         const SizedBox(height: 18),
-        const Text('Vous êtes une agence ?', textAlign: TextAlign.center),
-        TextButton(
-          onPressed: widget.onAgency,
-          child: const Text('Accéder à l’espace Agence'),
+        Text(
+          agency ? 'Vous êtes propriétaire ?' : 'Vous êtes une agence ?',
+          textAlign: TextAlign.center,
         ),
+        TextButton(
+          onPressed: agency ? widget.onOwner : widget.onAgency,
+          child: Text(
+            agency
+                ? 'Accéder à l’espace Propriétaire →'
+                : 'Accéder à l’espace Agence',
+          ),
+        ),
+        if (agency)
+          Image.asset(
+            'assets/homes/agency_reference_footer.png',
+            height: 110,
+            fit: BoxFit.contain,
+            semanticLabel: 'Décor urbain original de la maquette Agence',
+          ),
       ],
     ),
   );
@@ -305,8 +404,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
     String label,
     String target, {
     bool primary = false,
+    bool enabled = true,
   }) => Card(
-    color: primary ? tenantGreen : Colors.white,
+    color: primary
+        ? (enabled ? tenantGreen : tenantGreen.withValues(alpha: .42))
+        : Colors.white,
     child: ListTile(
       contentPadding: const EdgeInsets.all(18),
       leading: Icon(icon, color: primary ? Colors.white : tenantGreen),
@@ -321,7 +423,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
         Icons.chevron_right,
         color: primary ? Colors.white : tenantGreen,
       ),
-      onTap: () => go(target),
+      onTap: enabled ? () => go(target) : null,
     ),
   );
   Widget home() => Column(
@@ -357,6 +459,230 @@ class _OwnerFlowState extends State<OwnerFlow> {
       ),
     ],
   );
+  Widget agencyTile(
+    IconData icon,
+    String label,
+    String description,
+    String target,
+  ) => Expanded(
+    child: Card(
+      color: Colors.white,
+      margin: const EdgeInsets.all(4),
+      child: InkWell(
+        onTap: () => go(target),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 45, color: tenantGreen),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                  color: tenantInk,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 8),
+              const Align(
+                alignment: Alignment.centerRight,
+                child: Icon(Icons.chevron_right, color: tenantGreen),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  Widget agencyHome() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const SizedBox(height: 18),
+      Text(
+        owner
+            ? widget.account!.profile!.agencyName!
+            : 'Espace Agence immobilière',
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF6B7280),
+        ),
+      ),
+      title('Gérez vos logements\nsimplement'),
+      responsiveSections(
+        [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                agencyTile(
+                  Icons.add_home_outlined,
+                  'Proposer un logement',
+                  'Ajoutez un logement à mettre en location.',
+                  'draft',
+                ),
+                agencyTile(
+                  Icons.description_outlined,
+                  'Mes annonces',
+                  'Consultez et suivez vos annonces.',
+                  'list',
+                ),
+              ],
+            ),
+          ),
+        ],
+        [
+          const SizedBox(height: 18),
+          const Text(
+            'Annonces récentes',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: tenantInk,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TenantNotice(unavailable),
+          action(
+            'Voir toutes mes annonces →',
+            () => go('list'),
+            secondary: true,
+          ),
+        ],
+      ),
+    ],
+  );
+  Widget agencyProfile() {
+    final profile = owner ? widget.account!.profile : null;
+    final initials = profile?.agencyName
+        ?.split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        title('Mon profil'),
+        responsiveSections(
+          [
+            Center(
+              child: CircleAvatar(
+                radius: 45,
+                backgroundColor: const Color(0xFFD9EEE3),
+                child: initials == null
+                    ? const Icon(Icons.apartment, color: tenantGreen, size: 40)
+                    : Text(
+                        initials,
+                        style: const TextStyle(
+                          color: tenantGreen,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              profile?.agencyName ?? 'Aucune agence connectée',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: tenantInk,
+              ),
+            ),
+            const SizedBox(height: 20),
+            agencyProfileField('Responsable', profile?.name),
+            agencyProfileField('Téléphone / WhatsApp', profile?.phoneWhatsApp),
+            agencyProfileField(
+              'E-mail',
+              owner ? widget.account!.user!.email : null,
+            ),
+          ],
+          [
+            tile(
+              Icons.person_outline,
+              'Modifier les informations',
+              'account',
+              enabled: owner,
+            ),
+            tile(
+              Icons.lock_outline,
+              'Changer le mot de passe',
+              'password',
+              enabled: owner,
+            ),
+            action(
+              'Aide et assistance',
+              () => showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Aide et assistance'),
+                  content: const Text(
+                    'Aucun contact d’assistance officiel n’est configuré dans l’application.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Fermer'),
+                    ),
+                  ],
+                ),
+              ),
+              secondary: true,
+            ),
+            action(
+              'Se déconnecter',
+              authenticated ? signOutAgency : null,
+              secondary: true,
+            ),
+            if (!owner) TenantNotice(unavailable),
+            if (message != null) TenantNotice(message!, warning: true),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget agencyProfileField(String label, String? value) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value ?? 'Non renseigné',
+          style: const TextStyle(color: tenantInk),
+        ),
+      ],
+    ),
+  );
+  Future<void> signOutAgency() async {
+    try {
+      await widget.account!.gateway.signOut();
+      if (mounted) {
+        preview = false;
+        go('auth');
+      }
+    } catch (_) {
+      if (mounted)
+        setState(() => message = 'La déconnexion n’a pas pu être confirmée.');
+    }
+  }
+
   Widget section(IconData icon, String label) => Padding(
     padding: const EdgeInsets.only(top: 12, bottom: 10),
     child: Row(
@@ -826,18 +1152,15 @@ class _OwnerFlowState extends State<OwnerFlow> {
       'auth' => auth(),
       'forgot' => passwordPage(reset: true),
       'password' => passwordPage(),
-      'home' => home(),
+      'home' => agency ? agencyHome() : home(),
       'draft' => draft(),
       'review' => review(),
       'confirmation' => confirmation(),
       'list' => listings(),
       'corrections' => corrections(),
       'manage' => manage(),
-      'profile' => profile(),
-      _ => AccountPage(
-        account: widget.account,
-        initialRole: AccountRole.proprietaire,
-      ),
+      'profile' => agency ? agencyProfile() : profile(),
+      _ => AccountPage(account: widget.account, initialRole: widget.role),
     };
     final selectedIndex = switch (screen) {
       'draft' || 'review' => 1,
@@ -923,9 +1246,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
                                 color: const Color(0xFFE6F1E7),
                                 borderRadius: BorderRadius.circular(24),
                               ),
-                              child: const Text(
-                                'Propriétaire',
-                                style: TextStyle(
+                              child: Text(
+                                badge,
+                                style: const TextStyle(
                                   color: tenantGreen,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,

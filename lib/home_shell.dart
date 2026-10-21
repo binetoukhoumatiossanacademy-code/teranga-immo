@@ -9,6 +9,7 @@ import 'models/account_role.dart';
 import 'welcome_page.dart';
 import 'tenant_flow.dart';
 import 'owner_flow.dart';
+import 'agency_flow.dart';
 import 'home_art.dart';
 import 'home_landing.dart';
 import 'teranga_theme.dart';
@@ -32,6 +33,7 @@ class _HomeShellState extends State<HomeShell> {
   bool profileChosen = false;
   bool tenantFlowActive = false;
   bool ownerFlowActive = false;
+  bool agencyFlowActive = false;
   AccountRole selectedRole = AccountRole.locataire;
   String district = '', type = 'Tous';
   int? budget, rooms;
@@ -53,6 +55,7 @@ class _HomeShellState extends State<HomeShell> {
       profileChosen = true;
       tenantFlowActive = false;
       ownerFlowActive = false;
+      agencyFlowActive = false;
       page = 4;
     }
     if (connected && widget.account?.recovering == true) {
@@ -68,6 +71,7 @@ class _HomeShellState extends State<HomeShell> {
         profileChosen = true;
         tenantFlowActive = false;
         ownerFlowActive = false;
+        agencyFlowActive = false;
         page = 4;
       });
     }
@@ -159,9 +163,14 @@ class _HomeShellState extends State<HomeShell> {
             profileChosen = true;
             tenantFlowActive = role == AccountRole.locataire;
             ownerFlowActive = role == AccountRole.proprietaire;
+            agencyFlowActive = role == AccountRole.agence;
             page = role == AccountRole.locataire ? 0 : 4;
           });
-          if (role != AccountRole.locataire && connected) loadAnnouncements();
+          // L'espace annonceur n'utilise jamais le catalogue public : ses
+          // opérations restent distinctes et soumises au service privé.
+          if (role == AccountRole.proprietaire && connected) {
+            loadAnnouncements();
+          }
         },
       );
     }
@@ -177,7 +186,19 @@ class _HomeShellState extends State<HomeShell> {
         account: widget.account,
         onAgency: () => setState(() {
           ownerFlowActive = false;
+          agencyFlowActive = true;
           selectedRole = AccountRole.agence;
+          page = 4;
+        }),
+      );
+    }
+    if (agencyFlowActive) {
+      return AgencyFlow(
+        account: widget.account,
+        onOwner: () => setState(() {
+          agencyFlowActive = false;
+          ownerFlowActive = true;
+          selectedRole = AccountRole.proprietaire;
           page = 4;
         }),
       );

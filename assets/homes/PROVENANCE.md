@@ -19,3 +19,8 @@ Le logo `assets/brand/logo_original.png` est une copie inchangée du fichier fou
 `tenant_reference_living.png`, `tenant_reference_bedroom.png` et `tenant_reference_kitchen.png` : découpes sans retouche des trois miniatures de la page 8 du PDF officiel « Maquettes_Teranga_Immo (1).pdf » fourni par l’utilisateur (image intégrée 887 × 1774 pixels ; rectangles respectifs 49,457–298,600 ; 316,455–575,600 ; 592,455–846,600). Résolution limitée à celle des miniatures du PDF. Affichées uniquement avec les exemples fictifs déjà présents, comme illustrations de maquette sans lien avec un logement réel. Jamais utilisées comme photos des annonces Supabase. Aucune nouvelle photographie générée.
 
 `tenant_reference_empty_favorites.png` : visuel de l’état vide extrait sans retouche de la page 9 du même PDF (image intégrée 1374 × 1145, rectangle 840,420 à 1103,684).
+
+
+## Parcours Agence
+
+`agency_reference_footer.png` : décor de la page 21 du PDF officiel « Maquettes_Teranga_Immo (1).pdf », extrait de son image incorporée (1312 × 1199, rectangle 114,935–600,1083). Aucun décor nouveau généré, aucune photographie de logement ajoutée. Le logo reste celui de `assets/brand/logo_original.png`.
