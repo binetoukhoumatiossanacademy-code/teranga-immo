@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import 'account_page.dart';
 import 'account_service.dart';
 import 'annonces_repository.dart';
+import 'design_system/design_system.dart';
 import 'detail_page.dart';
 import 'home.dart';
 import 'models/account_role.dart';
@@ -12,7 +14,8 @@ import 'owner_flow.dart';
 import 'agency_flow.dart';
 import 'home_art.dart';
 import 'home_landing.dart';
-import 'teranga_theme.dart';
+import 'onboarding_page.dart';
+import 'role_confirmation_page.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -30,6 +33,9 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int page = 0;
+  bool onboardingSeen = false;
+  bool confirmingRole = false;
+  AccountRole? pendingRole;
   bool profileChosen = false;
   bool tenantFlowActive = false;
   bool ownerFlowActive = false;
@@ -52,6 +58,8 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     widget.account?.addListener(accountChanged);
     if (widget.account?.recovering == true) {
+      onboardingSeen = true;
+      confirmingRole = false;
       profileChosen = true;
       tenantFlowActive = false;
       ownerFlowActive = false;
@@ -68,6 +76,8 @@ class _HomeShellState extends State<HomeShell> {
   void accountChanged() {
     if (mounted && widget.account?.recovering == true) {
       setState(() {
+        onboardingSeen = true;
+        confirmingRole = false;
         profileChosen = true;
         tenantFlowActive = false;
         ownerFlowActive = false;
@@ -153,25 +163,49 @@ class _HomeShellState extends State<HomeShell> {
     context,
   ).push(MaterialPageRoute<void>(builder: (_) => DetailPage(home: home)));
 
+  void _activateRole(AccountRole role) {
+    setState(() {
+      selectedRole = role;
+      confirmingRole = false;
+      profileChosen = true;
+      tenantFlowActive = role == AccountRole.locataire;
+      ownerFlowActive = role == AccountRole.proprietaire;
+      agencyFlowActive = role == AccountRole.agence;
+      page = role == AccountRole.locataire ? 0 : 4;
+    });
+    // L'espace annonceur n'utilise jamais le catalogue public : ses
+    // opérations restent distinctes et soumises au service privé.
+    if (role == AccountRole.proprietaire && connected) {
+      loadAnnouncements();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!onboardingSeen) {
+      return OnboardingPage(
+        onGetStarted: () => setState(() => onboardingSeen = true),
+        onSignIn: () => setState(() {
+          onboardingSeen = true;
+          profileChosen = true;
+          page = 4;
+        }),
+      );
+    }
     if (!profileChosen) {
+      if (confirmingRole && pendingRole != null) {
+        return RoleConfirmationPage(
+          role: pendingRole!,
+          onBack: () => setState(() => confirmingRole = false),
+          onContinue: () => _activateRole(pendingRole!),
+        );
+      }
       return WelcomePage(
-        onContinue: (role) {
-          setState(() {
-            selectedRole = role;
-            profileChosen = true;
-            tenantFlowActive = role == AccountRole.locataire;
-            ownerFlowActive = role == AccountRole.proprietaire;
-            agencyFlowActive = role == AccountRole.agence;
-            page = role == AccountRole.locataire ? 0 : 4;
-          });
-          // L'espace annonceur n'utilise jamais le catalogue public : ses
-          // opérations restent distinctes et soumises au service privé.
-          if (role == AccountRole.proprietaire && connected) {
-            loadAnnouncements();
-          }
-        },
+        onBack: () => setState(() => onboardingSeen = false),
+        onContinue: (role) => setState(() {
+          pendingRole = role;
+          confirmingRole = true;
+        }),
       );
     }
     if (tenantFlowActive) {
@@ -213,6 +247,9 @@ class _HomeShellState extends State<HomeShell> {
             detail(results.first);
           }
         },
+        onPublish: () => setState(() => page = 3),
+        onFavorites: () => setState(() => page = 2),
+        onProfile: () => setState(() => page = 4),
         connected: connected,
         announcement: connected && results.isNotEmpty ? results.first : null,
         status: remoteStatus(),
@@ -236,29 +273,23 @@ class _HomeShellState extends State<HomeShell> {
       appBar: page == 0
           ? null
           : AppBar(
-              backgroundColor: sand,
-              title: const Row(
-                children: [
-                  Icon(Icons.roofing, color: green, size: 30),
-                  SizedBox(width: 10),
-                  Text(
-                    'Teranga Immo',
-                    style: TextStyle(fontWeight: FontWeight.w800, color: green),
-                  ),
-                ],
-              ),
+              backgroundColor: TerangaColors.ivory,
+              title: const TerangaLogo(variant: TerangaLogoVariant.compact),
             ),
       body: Column(
         children: [
           if (page != 0 && !connected)
             Container(
               width: double.infinity,
-              color: const Color(0xFFFFE9B2),
+              color: TerangaColors.warningSurface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: const Text(
+              child: Text(
                 'DÉMONSTRATION • Logements fictifs • Aucun contact réel',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: TerangaTypography.meta.copyWith(
+                  color: TerangaColors.warning,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           Expanded(
@@ -276,29 +307,14 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFE5F1E8),
-        height: 72,
         selectedIndex: page,
         onDestinationSelected: (value) => setState(() => page = value),
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            label: 'Accueil',
-          ),
-          NavigationDestination(icon: Icon(Icons.search), label: 'Rechercher'),
-          NavigationDestination(
-            icon: Icon(Icons.favorite_border),
-            label: 'Favoris',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Publier',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
+          NavigationDestination(icon: Icon(LucideIcons.house), label: 'Accueil'),
+          NavigationDestination(icon: Icon(LucideIcons.search), label: 'Rechercher'),
+          NavigationDestination(icon: Icon(LucideIcons.heart), label: 'Favoris'),
+          NavigationDestination(icon: Icon(LucideIcons.plus), label: 'Publier'),
+          NavigationDestination(icon: Icon(LucideIcons.user), label: 'Profil'),
         ],
       ),
     );
@@ -333,7 +349,7 @@ class _HomeShellState extends State<HomeShell> {
                             Text(
                               h.monthlyPrice,
                               style: const TextStyle(
-                                color: green,
+                                color: TerangaColors.gold,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 20,
                               ),
@@ -521,7 +537,7 @@ class _HomeShellState extends State<HomeShell> {
         child: Center(
           child: Column(
             children: [
-              Icon(icon, size: 72, color: green),
+              Icon(icon, size: 72, color: TerangaColors.gold),
               const SizedBox(height: 24),
               Text(
                 title,

@@ -1,0 +1,35 @@
+{
+  "name": "Teranga Immo",
+  "short_name": "Teranga Immo",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6F0E6",
+  "theme_color": "#F6F0E6",
+  "description": "Teranga Immo — trouvez, louez et publiez un logement au Sénégal.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

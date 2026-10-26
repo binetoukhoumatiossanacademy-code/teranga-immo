@@ -6,6 +6,7 @@ import 'package:teranga_immo/main.dart';
 import 'package:teranga_immo/annonces_repository.dart';
 import 'package:teranga_immo/account_service.dart';
 import 'package:teranga_immo/home.dart';
+import 'package:teranga_immo/design_system/design_system.dart';
 import 'account_test.dart' as account_test;
 
 void main() {
@@ -13,16 +14,18 @@ void main() {
 
   setUpAll(() async {
     // Les métriques d'Ahem, police de test par défaut, ne correspondent pas
-    // à celles de Poppins et peuvent provoquer des débordements artificiels.
-    final fonts = FontLoader('Poppins');
-    for (final asset in [
-      'assets/fonts/Poppins-Regular.ttf',
-      'assets/fonts/Poppins-SemiBold.ttf',
-      'assets/fonts/Poppins-Bold.ttf',
-    ]) {
-      fonts.addFont(rootBundle.load(asset));
-    }
-    await fonts.load();
+    // à celles de Cormorant Garamond/DM Sans et peuvent provoquer des
+    // débordements artificiels.
+    final titleFonts = FontLoader('Cormorant Garamond')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/cormorant_garamond/CormorantGaramond-Variable.ttf',
+        ),
+      );
+    await titleFonts.load();
+    final bodyFonts = FontLoader('DM Sans')
+      ..addFont(rootBundle.load('assets/fonts/dm_sans/DMSans-Variable.ttf'));
+    await bodyFonts.load();
   });
 
   testWidgets(
@@ -34,12 +37,15 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const TerangaApp());
       await tester.pumpAndSettle();
-      expect(find.text('Bienvenue sur\nTeranga Immo'), findsOneWidget);
+      expect(find.textContaining('Trouvez le lieu'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      await tapVisible(tester, find.textContaining('Commencer'));
       expect(find.text('Locataire'), findsOneWidget);
       expect(find.text('Propriétaire'), findsOneWidget);
       expect(find.text('Agence immobilière'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
-      await tapVisible(tester, find.text('Continuer'));
+      await tapVisible(tester, find.textContaining('Continuer'));
+      await tapVisible(tester, find.textContaining('Continuer'));
       expect(
         find.text('Trouvez votre\nlogement plus\nsimplement'),
         findsOneWidget,
@@ -54,8 +60,10 @@ void main() {
   ) async {
     await tester.pumpWidget(const TerangaApp());
     await tester.pumpAndSettle();
+    await tapVisible(tester, find.textContaining('Commencer'));
     await tapVisible(tester, find.text('Agence immobilière'));
-    await tapVisible(tester, find.text('Continuer'));
+    await tapVisible(tester, find.textContaining('Continuer'));
+    await tapVisible(tester, find.textContaining('Continuer'));
     expect(find.text('Bienvenue dans votre\nespace agence'), findsOneWidget);
     expect(
       find.text(
@@ -76,8 +84,14 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         await tester.pumpWidget(const TerangaApp());
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text('Continuer'));
-        await tester.tap(find.text('Continuer'));
+        await tester.ensureVisible(find.textContaining('Commencer'));
+        await tester.tap(find.textContaining('Commencer'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.textContaining('Continuer'));
+        await tester.tap(find.textContaining('Continuer'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.textContaining('Continuer'));
+        await tester.tap(find.textContaining('Continuer'));
         await tester.pumpAndSettle();
         expect(
           find.text('Trouvez votre\nlogement plus\nsimplement'),
@@ -179,10 +193,7 @@ void main() {
       expect(find.text('Maison à Thiès'), findsOneWidget);
       expect(find.text('Photo non renseignée'), findsOneWidget);
       expect(find.text('2 chambres'), findsNothing);
-      await tapVisible(
-        tester,
-        find.widgetWithText(FilledButton, 'Voir l’annonce'),
-      );
+      await tapVisible(tester, find.byType(TerangaPropertyCard));
       expect(find.text('Maison à Thiès'), findsOneWidget);
       expect(find.text('Description non renseignée.'), findsOneWidget);
       expect(find.text('DÉMONSTRATION · Aucune annonce réelle'), findsNothing);
@@ -214,14 +225,7 @@ void main() {
       await pumpLegacyHome(tester);
       await tester.pump();
       await tester.pumpAndSettle();
-      expect(
-        find.text('Mode démo · annonces et visuels fictifs'),
-        findsOneWidget,
-      );
-      expect(
-        find.bySemanticsLabel('Logo original Teranga Immo'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Teranga Immo'), findsOneWidget);
       expect(tester.takeException(), isNull);
     } finally {
       // Flutter vérifie les handles avant les callbacks addTearDown.
@@ -250,18 +254,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
-    expect(
-      find.text('Trouvez votre logement\navec plus de confiance.'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Trouvez le lieu'), findsOneWidget);
   });
 
   testWidgets('Un budget sans résultat peut être effacé', (tester) async {
     await pumpLegacyHome(tester);
     await tester.pump();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Où cherchez-vous ?'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Où cherchez-vous ?'));
     await tester.enterText(find.byType(TextField).at(1), '1');
     final search = find.widgetWithText(FilledButton, 'Rechercher');
     await tapVisible(tester, search);
@@ -274,7 +274,7 @@ void main() {
     await pumpLegacyHome(tester);
     await tester.pump();
     await tester.pumpAndSettle();
-    final card = find.widgetWithText(FilledButton, 'Voir l’annonce');
+    final card = find.byType(TerangaPropertyCard).first;
     await tapVisible(tester, card);
     expect(find.text('Détail du logement'), findsOneWidget);
     final detail = find.byType(DetailPage);

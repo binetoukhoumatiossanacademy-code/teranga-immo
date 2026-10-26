@@ -31,14 +31,13 @@ Future<void> enterSearch(
     TerangaApp(repository: repository, configurationError: configurationError),
   );
   await tester.pumpAndSettle();
-  if (tester.view.physicalSize.width / tester.view.devicePixelRatio >= 900) {
-    expect(
-      tester.getRect(find.byType(Image).first).right,
-      lessThan(tester.getRect(find.text('Locataire')).left),
-    );
-  }
+  await tapTenant(tester, find.textContaining('Commencer'));
+  // Le choix de profil est désormais centré et empilé à toutes les
+  // largeurs (design system), il n'y a plus de disposition logo/carte
+  // côte à côte à vérifier ici.
   expect(tester.takeException(), isNull);
-  await tapTenant(tester, find.text('Continuer'));
+  await tapTenant(tester, find.textContaining('Continuer'));
+  await tapTenant(tester, find.textContaining('Continuer'));
   expect(find.text('Comment ça marche ?'), findsOneWidget);
   await tapTenant(tester, find.text('Chercher votre logement'));
 }
@@ -53,15 +52,16 @@ Finder nav(String text) => find.descendant(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
-    final loader = FontLoader('Poppins');
-    for (final asset in [
-      'Poppins-Regular.ttf',
-      'Poppins-SemiBold.ttf',
-      'Poppins-Bold.ttf',
-    ]) {
-      loader.addFont(rootBundle.load('assets/fonts/$asset'));
-    }
-    await loader.load();
+    final titleLoader = FontLoader('Cormorant Garamond')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/cormorant_garamond/CormorantGaramond-Variable.ttf',
+        ),
+      );
+    await titleLoader.load();
+    final bodyLoader = FontLoader('DM Sans')
+      ..addFont(rootBundle.load('assets/fonts/dm_sans/DMSans-Variable.ttf'));
+    await bodyLoader.load();
   });
 
   for (final width in [320.0, 390.0, 768.0, 1100.0, 1440.0]) {

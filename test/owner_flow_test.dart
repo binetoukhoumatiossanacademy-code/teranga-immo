@@ -9,7 +9,7 @@ import 'account_test.dart' show FakeAccountGateway, testUser, profile;
 Future<void> tap(WidgetTester tester, String text) async {
   // Attendre aussi le repositionnement automatique du champ après la saisie.
   await tester.pumpAndSettle();
-  final target = find.text(text).last;
+  final target = find.textContaining(text).last;
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
   await tester.tap(target);
@@ -25,11 +25,16 @@ Future<void> enter(WidgetTester tester, String key, String text) async {
 
 void main() {
   setUpAll(() async {
-    final fonts = FontLoader('Poppins');
-    for (final asset in ['Regular', 'SemiBold', 'Bold']) {
-      fonts.addFont(rootBundle.load('assets/fonts/Poppins-$asset.ttf'));
-    }
-    await fonts.load();
+    final titleFonts = FontLoader('Cormorant Garamond')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/cormorant_garamond/CormorantGaramond-Variable.ttf',
+        ),
+      );
+    await titleFonts.load();
+    final bodyFonts = FontLoader('DM Sans')
+      ..addFont(rootBundle.load('assets/fonts/dm_sans/DMSans-Variable.ttf'));
+    await bodyFonts.load();
   });
   for (final width in [320.0, 390.0, 768.0, 1100.0, 1440.0]) {
     testWidgets('Propriétaire : huit écrans sans faux envoi à $width pixels', (
@@ -41,7 +46,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const TerangaApp());
       await tester.pumpAndSettle();
+      await tap(tester, 'Commencer');
       await tap(tester, 'Propriétaire');
+      await tap(tester, 'Continuer');
       await tap(tester, 'Continuer');
       expect(find.byType(OwnerFlow), findsOneWidget);
       expect(

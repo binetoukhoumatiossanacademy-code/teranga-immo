@@ -7,15 +7,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    final fonts = FontLoader('Poppins');
-    for (final asset in [
-      'assets/fonts/Poppins-Regular.ttf',
-      'assets/fonts/Poppins-SemiBold.ttf',
-      'assets/fonts/Poppins-Bold.ttf',
-    ]) {
-      fonts.addFont(rootBundle.load(asset));
-    }
-    await fonts.load();
+    final titleFonts = FontLoader('Cormorant Garamond')
+      ..addFont(
+        rootBundle.load(
+          'assets/fonts/cormorant_garamond/CormorantGaramond-Variable.ttf',
+        ),
+      );
+    await titleFonts.load();
+    final bodyFonts = FontLoader('DM Sans')
+      ..addFont(rootBundle.load('assets/fonts/dm_sans/DMSans-Variable.ttf'));
+    await bodyFonts.load();
   });
 
   testWidgets('Agence : connexion, inscription et conditions indisponibles', (
@@ -85,8 +86,10 @@ void main() {
 Future<void> openAgency(WidgetTester tester) async {
   await tester.pumpWidget(const TerangaApp());
   await tester.pumpAndSettle();
+  await tapVisible(tester, find.textContaining('Commencer'));
   await tapVisible(tester, find.text('Agence immobilière'));
-  await tapVisible(tester, find.text('Continuer'));
+  await tapVisible(tester, find.textContaining('Continuer'));
+  await tapVisible(tester, find.textContaining('Continuer'));
 }
 
 Future<void> goToAgencySection(WidgetTester tester, String label) async {
