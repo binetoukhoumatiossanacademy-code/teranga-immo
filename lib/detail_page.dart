@@ -114,9 +114,11 @@ class DetailPage extends StatelessWidget {
                           color: TerangaColors.gold,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Comprendre le niveau de contrôle',
-                          style: TerangaTypography.cardTitle,
+                        Expanded(
+                          child: Text(
+                            'Comprendre le niveau de contrôle',
+                            style: TerangaTypography.cardTitle,
+                          ),
                         ),
                       ],
                     ),
