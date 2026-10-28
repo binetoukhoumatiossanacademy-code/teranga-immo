@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+
+import 'design_system/design_system.dart';
 import 'home.dart';
 
-const tenantGreen = Color(0xFF00664B);
-const tenantGold = Color(0xFFF0AA0C);
-const tenantBackground = Color(0xFFFCFAF5);
-const tenantInk = Color(0xFF20364C);
 const tenantDemoPhotos = [
   'assets/homes/tenant_reference_living.png',
   'assets/homes/tenant_reference_bedroom.png',
@@ -17,29 +16,23 @@ class TenantHeader extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Image.asset(
-        'assets/brand/logo_original.png',
-        width: 82,
-        height: 82,
-        semanticLabel: 'Logo original Teranga Immo',
-      ),
+      const TerangaLogo(variant: TerangaLogoVariant.compact),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: const Color(0xFFE6F1E7),
-          borderRadius: BorderRadius.circular(30),
+          color: TerangaColors.beige,
+          borderRadius: BorderRadius.circular(TerangaRadius.badge + 16),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person, size: 18, color: tenantGreen),
-            SizedBox(width: 6),
+            const Icon(LucideIcons.user, size: 16, color: TerangaColors.gold),
+            const SizedBox(width: 6),
             Text(
               'Locataire',
-              style: TextStyle(
-                color: tenantGreen,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+              style: TerangaTypography.meta.copyWith(
+                color: TerangaColors.deepBrown,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -56,31 +49,27 @@ class TenantNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(10),
+    padding: const EdgeInsets.all(TerangaSpacing.md),
     decoration: BoxDecoration(
-      color: warning ? const Color(0xFFFFF7E1) : const Color(0xFFF1F3F5),
-      borderRadius: BorderRadius.circular(10),
+      color: warning ? TerangaColors.warningSurface : TerangaColors.beige,
+      borderRadius: BorderRadius.circular(TerangaRadius.field),
       border: Border.all(
-        color: warning ? const Color(0xFFFFDF9D) : const Color(0xFFE3E7EA),
+        color: warning ? TerangaColors.warning.withValues(alpha: 0.4) : TerangaColors.border,
       ),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          Icons.info_outline,
-          size: 17,
-          color: warning ? const Color(0xFFAA7400) : tenantInk,
+          warning ? LucideIcons.triangle_alert : LucideIcons.info,
+          size: 16,
+          color: warning ? TerangaColors.warning : TerangaColors.taupe,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: TerangaSpacing.sm),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 11,
-              height: 1.45,
-              color: tenantInk,
-            ),
+            style: TerangaTypography.meta.copyWith(color: TerangaColors.deepBrown),
           ),
         ),
       ],
@@ -100,7 +89,7 @@ class TenantPhoto extends StatelessWidget {
   final double height;
   @override
   Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(TerangaRadius.card),
     child: home.isDemo
         ? Image.asset(
             tenantDemoPhotos[index],
@@ -113,19 +102,19 @@ class TenantPhoto extends StatelessWidget {
         : Container(
             height: height,
             width: double.infinity,
-            color: const Color(0xFFEAF2E9),
-            child: const Column(
+            color: TerangaColors.beige,
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.image_not_supported_outlined,
-                  size: 40,
-                  color: tenantGreen,
+                const Icon(
+                  LucideIcons.image_off,
+                  size: 36,
+                  color: TerangaColors.lightBrown,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: TerangaSpacing.sm),
                 Text(
                   'Photo non renseignée',
-                  style: TextStyle(color: tenantInk, fontSize: 12),
+                  style: TerangaTypography.meta,
                 ),
               ],
             ),
@@ -145,19 +134,18 @@ class TenantListingCard extends StatelessWidget {
   final bool favorite;
   final VoidCallback onOpen, onFavorite;
   @override
-  Widget build(BuildContext context) => Card(
-    color: Colors.white,
-    margin: const EdgeInsets.only(bottom: 14),
-    elevation: 1,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-      side: const BorderSide(color: Color(0xFFE3E8E3)),
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: TerangaSpacing.lg),
+    decoration: BoxDecoration(
+      color: TerangaColors.white,
+      borderRadius: BorderRadius.circular(TerangaRadius.card),
+      border: Border.all(color: TerangaColors.border),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onOpen,
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(TerangaSpacing.sm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -168,7 +156,7 @@ class TenantListingCard extends StatelessWidget {
                   top: 7,
                   right: 7,
                   child: Material(
-                    color: Colors.white,
+                    color: TerangaColors.white.withValues(alpha: 0.92),
                     shape: const CircleBorder(),
                     child: IconButton(
                       tooltip: favorite
@@ -176,8 +164,8 @@ class TenantListingCard extends StatelessWidget {
                           : 'Ajouter aux favoris',
                       onPressed: onFavorite,
                       icon: Icon(
-                        favorite ? Icons.favorite : Icons.favorite_border,
-                        color: favorite ? Colors.red : tenantInk,
+                        favorite ? LucideIcons.heart : LucideIcons.heart,
+                        color: favorite ? TerangaColors.gold : TerangaColors.deepBrown,
                       ),
                     ),
                   ),
@@ -185,53 +173,48 @@ class TenantListingCard extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(6, 8, 6, 2),
+              padding: const EdgeInsets.fromLTRB(6, TerangaSpacing.sm, 6, TerangaSpacing.xs),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     home.monthlyPrice,
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w700,
-                      color: tenantGreen,
+                    style: TerangaTypography.bodyStrong.copyWith(
+                      color: TerangaColors.gold,
+                      fontSize: 18,
                     ),
                   ),
-                  Text(
-                    home.location,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: tenantInk,
-                    ),
-                  ),
+                  Text(home.location, style: TerangaTypography.cardTitle),
                   const SizedBox(height: 3),
-                  Text(
-                    '${home.type} · ${home.roomsLabel}',
-                    style: const TextStyle(fontSize: 12, color: tenantInk),
-                  ),
-                  const Divider(height: 18),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.circle, size: 14, color: Color(0xFF9CA3AF)),
-                      SizedBox(width: 8),
+                      const Icon(LucideIcons.building_complex, size: 14, color: TerangaColors.lightBrown),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${home.type} · ${home.roomsLabel}',
+                        style: TerangaTypography.meta,
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 18, color: TerangaColors.border),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.circle, size: 12, color: TerangaColors.border),
+                      const SizedBox(width: TerangaSpacing.sm),
                       Expanded(
                         child: Text(
                           'Niveau de contrôle non renseigné',
-                          style: TextStyle(fontSize: 11, color: tenantInk),
+                          style: TerangaTypography.meta,
                         ),
                       ),
                     ],
                   ),
                   if (home.isDemo)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'Exemple fictif · illustration de maquette',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF657267),
-                        ),
+                        style: TerangaTypography.meta.copyWith(fontSize: 11),
                       ),
                     ),
                   Align(
@@ -252,19 +235,21 @@ class TenantListingCard extends StatelessWidget {
 }
 
 ButtonStyle tenantPrimaryStyle() => FilledButton.styleFrom(
-  backgroundColor: tenantGreen,
-  foregroundColor: Colors.white,
+  backgroundColor: TerangaColors.gold,
+  foregroundColor: TerangaColors.white,
   minimumSize: const Size.fromHeight(50),
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.md, vertical: TerangaSpacing.md),
+  textStyle: TerangaTypography.button,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(TerangaRadius.button)),
 );
 
 Future<void> showTenantControlInfo(BuildContext context) => showDialog<void>(
   context: context,
   builder: (context) => AlertDialog(
     title: const Text('Niveau de contrôle Teranga Immo'),
-    content: const Text(
+    content: Text(
       'Niveau de contrôle non renseigné. Une approbation de publication ne constitue pas une vérification sur place.\n\nPremium = visibilité payante. Le paiement ne donne jamais le statut Vérifié.',
+      style: TerangaTypography.body,
     ),
     actions: [
       TextButton(
@@ -282,12 +267,12 @@ Future<void> showTenantContact(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  backgroundColor: tenantBackground,
+  backgroundColor: TerangaColors.ivory,
   constraints: BoxConstraints(
     maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 720,
   ),
   shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    borderRadius: BorderRadius.vertical(top: Radius.circular(TerangaRadius.modal + 8)),
   ),
   builder: (context) => SafeArea(
     child: SingleChildScrollView(
@@ -302,69 +287,62 @@ Future<void> showTenantContact(
               child: IconButton(
                 tooltip: 'Fermer le contact',
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+                icon: const Icon(LucideIcons.x),
               ),
             ),
-            const Text(
+            Text(
               'Contacter l’annonceur',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: tenantGreen,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TerangaTypography.sectionTitle.copyWith(fontSize: 24),
             ),
-            const SizedBox(height: 18),
-            const Row(
+            const SizedBox(height: TerangaSpacing.lg),
+            Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: Color(0xFFD9EEE3),
-                  child: Icon(Icons.person_outline, color: tenantGreen),
+                const CircleAvatar(
+                  backgroundColor: TerangaColors.beige,
+                  child: Icon(LucideIcons.user, color: TerangaColors.gold),
                 ),
-                SizedBox(width: 14),
+                const SizedBox(width: TerangaSpacing.md),
                 Expanded(
                   child: Text(
                     'Annonceur non renseigné',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: tenantInk,
-                    ),
+                    style: TerangaTypography.bodyStrong,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: TerangaSpacing.lg),
             TenantNotice(
               home.isDemo
                   ? 'Ce logement est fictif : aucun propriétaire ne peut être contacté.'
                   : 'Coordonnées de contact non renseignées pour cette annonce.',
               warning: true,
             ),
-            const SizedBox(height: 18),
-            const Row(
+            const SizedBox(height: TerangaSpacing.lg),
+            Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: OutlinedButton(
                     onPressed: null,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.call_outlined, size: 18),
+                        Icon(LucideIcons.phone, size: 18),
                         SizedBox(width: 6),
                         Flexible(child: Text('Appeler')),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: TerangaSpacing.sm),
                 Expanded(
                   child: FilledButton(
                     onPressed: null,
-                    child: Row(
+                    style: tenantPrimaryStyle(),
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_outlined, size: 18),
+                        Icon(LucideIcons.message_circle, size: 18),
                         SizedBox(width: 6),
                         Flexible(child: Text('WhatsApp')),
                       ],
@@ -373,10 +351,10 @@ Future<void> showTenantContact(
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: TerangaSpacing.md),
+            Text(
               'Les appels et WhatsApp seront accessibles lorsque des coordonnées réelles et autorisées seront disponibles.',
-              style: TextStyle(fontSize: 12, color: tenantInk),
+              style: TerangaTypography.meta,
             ),
           ],
         ),

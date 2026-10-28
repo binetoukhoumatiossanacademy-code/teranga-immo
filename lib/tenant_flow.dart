@@ -1,8 +1,10 @@
 import 'responsive_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'account_page.dart';
 import 'account_service.dart';
 import 'annonces_repository.dart';
+import 'design_system/design_system.dart';
 import 'home.dart';
 import 'models/account_role.dart';
 import 'tenant_detail.dart';
@@ -224,32 +226,32 @@ class _TenantFlowState extends State<TenantFlow> {
       ][index],
     );
     return Scaffold(
-      backgroundColor: tenantBackground,
+      backgroundColor: TerangaColors.ivory,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (desktop)
             SafeArea(
               child: NavigationRail(
-                backgroundColor: tenantBackground,
+                backgroundColor: TerangaColors.ivory,
                 selectedIndex: selectedIndex,
                 labelType: NavigationRailLabelType.all,
                 onDestinationSelected: navigate,
                 destinations: const [
                   NavigationRailDestination(
-                    icon: Icon(Icons.home_outlined),
+                    icon: Icon(LucideIcons.house),
                     label: Text('Accueil'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.search),
+                    icon: Icon(LucideIcons.search),
                     label: Text('Rechercher'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.favorite_border),
+                    icon: Icon(LucideIcons.heart),
                     label: Text('Favoris'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.person_outline),
+                    icon: Icon(LucideIcons.user),
                     label: Text('Profil'),
                   ),
                 ],
@@ -295,9 +297,6 @@ class _TenantFlowState extends State<TenantFlow> {
                   maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 1240,
                 ),
                 child: NavigationBar(
-                  backgroundColor: Colors.white,
-                  indicatorColor: const Color(0xFFE1F0E5),
-                  height: 68,
                   selectedIndex: screen == TenantScreen.favorites
                       ? 2
                       : screen == TenantScreen.profile
@@ -313,19 +312,19 @@ class _TenantFlowState extends State<TenantFlow> {
                   ),
                   destinations: const [
                     NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
+                      icon: Icon(LucideIcons.house),
                       label: 'Accueil',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.search),
+                      icon: Icon(LucideIcons.search),
                       label: 'Rechercher',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.favorite_border),
+                      icon: Icon(LucideIcons.heart),
                       label: 'Favoris',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.person_outline),
+                      icon: Icon(LucideIcons.user),
                       label: 'Profil',
                     ),
                   ],
@@ -335,61 +334,42 @@ class _TenantFlowState extends State<TenantFlow> {
     );
   }
 
-  Widget heading(String text, {double size = 28}) => Text(
+  Widget heading(String text, {double size = 26}) => Text(
     text,
-    style: TextStyle(
-      color: tenantGreen,
-      fontSize: size,
-      fontWeight: FontWeight.w700,
-      height: 1.15,
-    ),
+    style: TerangaTypography.sectionTitle.copyWith(fontSize: size),
   );
   Widget label(String text) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 5),
+    padding: const EdgeInsets.only(top: TerangaSpacing.sm, bottom: TerangaSpacing.xs),
     child: Text(
       text,
-      style: const TextStyle(
-        color: tenantInk,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
+      style: TerangaTypography.meta.copyWith(
+        color: TerangaColors.deepBrown,
+        fontWeight: FontWeight.w700,
       ),
     ),
   );
   InputDecoration input(String hint) => InputDecoration(
     hintText: hint,
     isDense: true,
-    filled: true,
-    fillColor: Colors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-    hintStyle: const TextStyle(fontSize: 12),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    hintStyle: TerangaTypography.meta,
   );
   Widget section(String title, IconData icon, List<Widget> children) =>
       Container(
-        margin: const EdgeInsets.only(top: 14),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(top: TerangaSpacing.md),
+        padding: const EdgeInsets.all(TerangaSpacing.md),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFFE2EAE3)),
+          color: TerangaColors.white,
+          borderRadius: BorderRadius.circular(TerangaRadius.card),
+          border: Border.all(color: TerangaColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Icon(icon, size: 22, color: tenantGreen),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: tenantGreen,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                Icon(icon, size: 20, color: TerangaColors.gold),
+                const SizedBox(width: TerangaSpacing.sm),
+                Expanded(child: Text(title, style: TerangaTypography.cardTitle)),
               ],
             ),
             ...children,
@@ -401,7 +381,7 @@ class _TenantFlowState extends State<TenantFlow> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       heading('Trouvez le logement qui\nvous convient'),
-      const SizedBox(height: 18),
+      const SizedBox(height: TerangaSpacing.lg),
       ResponsiveSections(
         first: [
           TextField(
@@ -410,45 +390,42 @@ class _TenantFlowState extends State<TenantFlow> {
             decoration: input('Décrivez le logement que vous recherchez…')
                 .copyWith(
                   prefixIcon: const Icon(
-                    Icons.chat_bubble_outline,
-                    color: tenantGreen,
+                    LucideIcons.message_circle,
+                    color: TerangaColors.gold,
                   ),
                   labelText: 'Votre recherche',
                 ),
           ),
-          const SizedBox(height: 7),
-          const Text(
+          const SizedBox(height: TerangaSpacing.xs),
+          Text(
             'Exemple : Appartement meublé à Ngor, 4 chambres, maximum 400 000 FCFA/mois.',
-            style: TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
+            style: TerangaTypography.meta,
           ),
-          const SizedBox(height: 7),
-          const Text(
+          const SizedBox(height: TerangaSpacing.xs),
+          Text(
             'Recherche par mots-clés dans les informations disponibles. Les phrases ne sont pas converties automatiquement en critères.',
-            style: TextStyle(fontSize: 10, color: tenantInk),
+            style: TerangaTypography.meta,
           ),
-          const Divider(height: 28),
-          heading('Ou précisez vos critères', size: 21),
-          const SizedBox(height: 5),
-          const Text(
+          const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
+          heading('Ou précisez vos critères', size: 20),
+          const SizedBox(height: TerangaSpacing.xs),
+          Text(
             'Écrivez, choisissez vos critères ou combinez les deux.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            style: TerangaTypography.meta,
           ),
-          section('Localisation', Icons.location_on, [
+          section('Localisation', LucideIcons.map_pin, [
             label('Région'),
             DropdownButtonFormField<String>(
               decoration: input('Choisir une région'),
-              hint: const Text(
-                'Choisir une région',
-                style: TextStyle(fontSize: 12),
-              ),
+              hint: Text('Choisir une région', style: TerangaTypography.meta),
               items: const [],
               onChanged: null,
             ),
-            const Padding(
-              padding: EdgeInsets.only(top: 5),
+            Padding(
+              padding: const EdgeInsets.only(top: TerangaSpacing.xs),
               child: Text(
                 'Filtre région non disponible dans la source actuelle.',
-                style: TextStyle(fontSize: 10, color: tenantInk),
+                style: TerangaTypography.meta,
               ),
             ),
             Row(
@@ -464,12 +441,11 @@ class _TenantFlowState extends State<TenantFlow> {
                         decoration: input(
                           'Choisir une ville',
                         ).copyWith(labelText: 'Ville'),
-                        style: const TextStyle(fontSize: 12),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: TerangaSpacing.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -480,7 +456,6 @@ class _TenantFlowState extends State<TenantFlow> {
                         decoration: input(
                           'Choisir un quartier',
                         ).copyWith(labelText: 'Quartier'),
-                        style: const TextStyle(fontSize: 12),
                       ),
                     ],
                   ),
@@ -490,19 +465,19 @@ class _TenantFlowState extends State<TenantFlow> {
           ]),
         ],
         second: [
-          section('Votre logement', Icons.home, [
+          section('Votre logement', LucideIcons.house, [
             label('Type de logement'),
             Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: TerangaSpacing.xs,
+              runSpacing: TerangaSpacing.xs,
               children: [
                 for (final value in ['Appartement', 'Studio', 'Maison'])
                   ChoiceChip(
-                    label: Text(value, style: const TextStyle(fontSize: 11)),
+                    label: Text(value),
                     selected: type == value,
                     onSelected: (selected) =>
                         setState(() => type = selected ? value : 'Tous'),
-                    selectedColor: const Color(0xFFE2F1E5),
+                    selectedColor: TerangaColors.gold.withValues(alpha: 0.2),
                   ),
               ],
             ),
@@ -515,12 +490,11 @@ class _TenantFlowState extends State<TenantFlow> {
                 suffixText: 'FCFA/mois',
                 errorText: rentError,
               ),
-              style: const TextStyle(fontSize: 12),
             ),
             label('Nombre de chambres'),
             Wrap(
-              spacing: 5,
-              runSpacing: 5,
+              spacing: TerangaSpacing.xs,
+              runSpacing: TerangaSpacing.xs,
               children: [
                 for (final value in [1, 2, 3, 4, 5])
                   ChoiceChip(
@@ -530,55 +504,40 @@ class _TenantFlowState extends State<TenantFlow> {
                         ? null
                         : (selected) =>
                               setState(() => rooms = selected ? value : null),
-                    selectedColor: const Color(0xFFE2F1E5),
+                    selectedColor: TerangaColors.gold.withValues(alpha: 0.2),
                   ),
               ],
             ),
             if (connected)
-              const Text(
+              Text(
                 'Information non disponible dans ces annonces.',
-                style: TextStyle(fontSize: 10, color: tenantInk),
+                style: TerangaTypography.meta,
               ),
             label('Ameublement'),
             Wrap(
-              spacing: 5,
-              runSpacing: 5,
+              spacing: TerangaSpacing.xs,
+              runSpacing: TerangaSpacing.xs,
               children: const [
-                ChoiceChip(
-                  label: Text('Meublé', style: TextStyle(fontSize: 11)),
-                  selected: false,
-                ),
-                ChoiceChip(
-                  label: Text('Non meublé', style: TextStyle(fontSize: 11)),
-                  selected: false,
-                ),
-                ChoiceChip(
-                  label: Text('Peu importe', style: TextStyle(fontSize: 11)),
-                  selected: true,
-                ),
+                ChoiceChip(label: Text('Meublé'), selected: false),
+                ChoiceChip(label: Text('Non meublé'), selected: false),
+                ChoiceChip(label: Text('Peu importe'), selected: true),
               ],
             ),
-            const Text(
+            Text(
               'Ameublement non renseigné : filtre désactivé.',
-              style: TextStyle(fontSize: 10, color: tenantInk),
+              style: TerangaTypography.meta,
             ),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: clear,
-                child: const Text(
-                  'Effacer les critères',
-                  style: TextStyle(
-                    fontSize: 12,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
+                child: const Text('Effacer les critères'),
               ),
             ),
           ]),
         ],
       ),
-      const SizedBox(height: 18),
+      const SizedBox(height: TerangaSpacing.lg),
       Align(
         alignment: Alignment.centerLeft,
         child: ConstrainedBox(
@@ -592,15 +551,12 @@ class _TenantFlowState extends State<TenantFlow> {
             child: FilledButton(
               onPressed: search,
               style: tenantPrimaryStyle(),
-              child: const Text(
-                'Trouver mon logement →',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
-              ),
+              child: const Text('Trouver mon logement →'),
             ),
           ),
         ),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: TerangaSpacing.md),
       if (!connected)
         const TenantNotice(
           'Mode démonstration : recherche dans les trois exemples fictifs déjà présents dans le projet.',
@@ -615,27 +571,24 @@ class _TenantFlowState extends State<TenantFlow> {
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
           onPressed: () => go(TenantScreen.search),
-          icon: const Icon(Icons.arrow_back, size: 17),
+          icon: const Icon(LucideIcons.arrow_left, size: 17),
           label: const Text('Retour à la recherche'),
         ),
       ),
       heading('Logements trouvés'),
       if (appliedLabels.isNotEmpty)
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: TerangaSpacing.sm),
           child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: TerangaSpacing.xs,
+            runSpacing: TerangaSpacing.xs,
             children: appliedLabels.entries
                 .map(
                   (entry) => InputChip(
                     onDeleted: () => removeCriterion(entry.key),
                     deleteButtonTooltipMessage: 'Supprimer ${entry.value}',
-                    label: Text(
-                      entry.value,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                    backgroundColor: const Color(0xFFE7F3EB),
+                    label: Text(entry.value),
+                    backgroundColor: TerangaColors.beige,
                   ),
                 )
                 .toList(),
@@ -650,41 +603,38 @@ class _TenantFlowState extends State<TenantFlow> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => go(TenantScreen.search),
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text(
-                    'Modifier la recherche',
-                    style: TextStyle(fontSize: 10),
-                  ),
+                  icon: const Icon(LucideIcons.pencil, size: 16),
+                  label: const Text('Modifier la recherche'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: TerangaSpacing.sm),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => go(TenantScreen.search),
-                  icon: const Icon(Icons.filter_list, size: 16),
-                  label: const Text('Filtres', style: TextStyle(fontSize: 11)),
+                  icon: const Icon(LucideIcons.list_filter, size: 16),
+                  label: const Text('Filtres'),
                 ),
               ),
             ],
           ),
         ),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: TerangaSpacing.md),
       if (!connected)
         const Padding(
-          padding: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: TerangaSpacing.md),
           child: TenantNotice(
             'DÉMONSTRATION · Annonces fictives existantes et illustrations extraites du PDF. Aucun logement réellement proposé.',
           ),
         ),
       if (loading)
-        const Padding(
-          padding: EdgeInsets.all(26),
+        Padding(
+          padding: const EdgeInsets.all(TerangaSpacing.xl),
           child: Column(
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 14),
-              Text('Chargement des annonces…'),
+              const CircularProgressIndicator(color: TerangaColors.gold),
+              const SizedBox(height: TerangaSpacing.md),
+              Text('Chargement des annonces…', style: TerangaTypography.body),
             ],
           ),
         )
@@ -695,18 +645,18 @@ class _TenantFlowState extends State<TenantFlow> {
       ] else ...[
         Text(
           '${results.length} résultat(s)',
-          style: const TextStyle(fontSize: 12, color: tenantInk),
+          style: TerangaTypography.meta,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: TerangaSpacing.sm),
         if (results.isEmpty) ...[
           const TenantNotice(
             'Aucun logement ne correspond exactement à vos critères. Aucun résultat approchant n’est proposé automatiquement.',
             warning: true,
           ),
-          const SizedBox(height: 14),
-          const Text(
+          const SizedBox(height: TerangaSpacing.md),
+          Text(
             'Aucune annonce approuvée ne correspond à votre recherche.',
-            style: TextStyle(fontSize: 13, color: tenantInk),
+            style: TerangaTypography.body,
           ),
         ] else
           ResponsiveListingGrid(
@@ -721,11 +671,11 @@ class _TenantFlowState extends State<TenantFlow> {
             ],
           ),
       ],
-      const SizedBox(height: 12),
-      const Text(
+      const SizedBox(height: TerangaSpacing.md),
+      Text(
         'Premium = visibilité payante. Le paiement ne donne jamais le statut Vérifié.',
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 10, color: tenantInk),
+        style: TerangaTypography.meta,
       ),
     ],
   );
@@ -734,26 +684,22 @@ class _TenantFlowState extends State<TenantFlow> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       heading('Mes favoris'),
-      const SizedBox(height: 10),
+      const SizedBox(height: TerangaSpacing.sm),
       const TenantNotice(
         'Favoris de cette session uniquement. Aucune sauvegarde dans un compte ou dans Supabase.',
       ),
-      const SizedBox(height: 14),
-      const Text(
+      const SizedBox(height: TerangaSpacing.md),
+      Text(
         'Touchez un logement pour le consulter.',
-        style: TextStyle(
-          fontSize: 12,
-          color: tenantInk,
-          fontWeight: FontWeight.w600,
+        style: TerangaTypography.meta.copyWith(
+          color: TerangaColors.deepBrown,
+          fontWeight: FontWeight.w700,
         ),
       ),
-      const Text(
-        'Touchez le cœur pour le retirer.',
-        style: TextStyle(fontSize: 12, color: tenantInk),
-      ),
-      const SizedBox(height: 16),
+      Text('Touchez le cœur pour le retirer.', style: TerangaTypography.meta),
+      const SizedBox(height: TerangaSpacing.lg),
       if (favorites.isEmpty) ...[
-        const SizedBox(height: 30),
+        const SizedBox(height: TerangaSpacing.xxl),
         Center(
           child: Image.asset(
             'assets/homes/tenant_reference_empty_favorites.png',
@@ -762,18 +708,13 @@ class _TenantFlowState extends State<TenantFlow> {
             semanticLabel: 'Aucun logement dans les favoris',
           ),
         ),
-        const SizedBox(height: 28),
-        const Text(
+        const SizedBox(height: TerangaSpacing.xl),
+        Text(
           'Vous n’avez pas encore\najouté de logement\nà vos favoris.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 23,
-            height: 1.25,
-            fontWeight: FontWeight.w700,
-            color: tenantGreen,
-          ),
+          style: TerangaTypography.sectionTitle.copyWith(fontSize: 21),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: TerangaSpacing.xl),
         ResponsiveAction(
           child: FilledButton(
             onPressed: () => go(TenantScreen.search),

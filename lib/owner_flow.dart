@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'account_page.dart';
 import 'account_service.dart';
+import 'design_system/design_system.dart';
 import 'models/account_role.dart';
 import 'models/announcement.dart';
 import 'tenant_widgets.dart';
@@ -109,7 +111,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: column(first)),
-        const SizedBox(width: 32),
+        const SizedBox(width: TerangaSpacing.xxxl),
         Expanded(child: column(second)),
       ],
     );
@@ -139,16 +141,8 @@ class _OwnerFlowState extends State<OwnerFlow> {
     ),
   );
   Widget title(String text) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 25,
-        height: 1.2,
-        fontWeight: FontWeight.w700,
-        color: tenantGreen,
-      ),
-    ),
+    padding: const EdgeInsets.symmetric(vertical: TerangaSpacing.lg),
+    child: Text(text, style: TerangaTypography.sectionTitle.copyWith(fontSize: 24)),
   );
   Widget input(
     String key,
@@ -158,7 +152,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
     int lines = 1,
     TextInputType? keyboard,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.only(bottom: TerangaSpacing.md),
     child: TextFormField(
       key: ValueKey('owner-$key'),
       controller: fields[key],
@@ -167,18 +161,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
       keyboardType: keyboard,
       decoration: InputDecoration(
         labelText: label,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         suffixIcon: password
             ? IconButton(
                 tooltip: 'Afficher ou masquer le mot de passe',
                 onPressed: () => setState(() => obscure = !obscure),
-                icon: Icon(
-                  obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                ),
+                icon: Icon(obscure ? LucideIcons.eye_off : LucideIcons.eye),
               )
             : null,
       ),
@@ -255,31 +242,26 @@ class _OwnerFlowState extends State<OwnerFlow> {
       children: [
         if (agency) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: TerangaSpacing.lg),
             child: Text(
               'Bienvenue dans votre\nespace agence',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 24,
-                height: 1.15,
-                fontWeight: FontWeight.w700,
-                color: tenantGreen,
-              ),
+              style: TerangaTypography.sectionTitle.copyWith(fontSize: 23),
             ),
           ),
-          const Text(
+          Text(
             'Trouvez. Valorisez. Ensemble.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF4E5261), fontSize: 13),
+            style: TerangaTypography.meta,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: TerangaSpacing.lg),
         ] else
           title('Bienvenue dans votre espace propriétaire'),
         const Align(
           alignment: Alignment.centerLeft,
           child: SizedBox(
             width: 56,
-            child: Divider(color: tenantGold, thickness: 3),
+            child: Divider(color: TerangaColors.gold, thickness: 3),
           ),
         ),
         SegmentedButton<bool>(
@@ -296,7 +278,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
                   authForm.currentState?.reset();
                 }),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: TerangaSpacing.xl),
         if (signup) ...[
           if (agency) input('agency', 'Nom de l’agence'),
           input(
@@ -310,11 +292,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
           ),
         ],
         input('email', 'E-mail', keyboard: TextInputType.emailAddress),
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: TerangaSpacing.md),
           child: Text(
             'La connexion existante utilise votre adresse e-mail.',
-            style: TextStyle(fontSize: 11),
+            style: TerangaTypography.meta,
           ),
         ),
         input('password', 'Mot de passe', password: true),
@@ -329,7 +311,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
           Row(
             children: [
               const Checkbox(value: false, onChanged: null),
-              const Text('J’accepte les ', style: TextStyle(fontSize: 11)),
+              Text('J’accepte les ', style: TerangaTypography.meta),
               Flexible(
                 child: TextButton(
                   onPressed: () => showDialog<void>(
@@ -345,13 +327,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
                       ],
                     ),
                   ),
-                  child: const Text(
-                    'conditions d’utilisation',
-                    style: TextStyle(
-                      fontSize: 11,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
+                  child: const Text('conditions d’utilisation'),
                 ),
               ),
             ],
@@ -360,7 +336,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
         ],
         if (widget.account == null) TenantNotice(unavailable),
         if (message != null) TenantNotice(message!, warning: true),
-        if (busy) const Center(child: CircularProgressIndicator()),
+        if (busy) const Center(child: CircularProgressIndicator(color: TerangaColors.gold)),
         action(
           signup
               ? (agency ? 'Créer le compte de l’agence' : 'Créer mon compte')
@@ -376,10 +352,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
           },
           child: const Text('Consulter les écrans sans connexion'),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: TerangaSpacing.lg),
         Text(
           agency ? 'Vous êtes propriétaire ?' : 'Vous êtes une agence ?',
           textAlign: TextAlign.center,
+          style: TerangaTypography.body,
         ),
         TextButton(
           onPressed: agency ? widget.onOwner : widget.onAgency,
@@ -407,21 +384,20 @@ class _OwnerFlowState extends State<OwnerFlow> {
     bool enabled = true,
   }) => Card(
     color: primary
-        ? (enabled ? tenantGreen : tenantGreen.withValues(alpha: .42))
-        : Colors.white,
+        ? (enabled ? TerangaColors.gold : TerangaColors.gold.withValues(alpha: .42))
+        : TerangaColors.white,
     child: ListTile(
-      contentPadding: const EdgeInsets.all(18),
-      leading: Icon(icon, color: primary ? Colors.white : tenantGreen),
+      contentPadding: const EdgeInsets.all(TerangaSpacing.lg),
+      leading: Icon(icon, color: primary ? TerangaColors.white : TerangaColors.gold),
       title: Text(
         label,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: primary ? Colors.white : tenantGreen,
+        style: TerangaTypography.cardTitle.copyWith(
+          color: primary ? TerangaColors.white : TerangaColors.deepBrown,
         ),
       ),
       trailing: Icon(
-        Icons.chevron_right,
-        color: primary ? Colors.white : tenantGreen,
+        LucideIcons.chevron_right,
+        color: primary ? TerangaColors.white : TerangaColors.gold,
       ),
       onTap: enabled ? () => go(target) : null,
     ),
@@ -434,25 +410,22 @@ class _OwnerFlowState extends State<OwnerFlow> {
             ? 'Bonjour ${widget.account!.profile!.name}'
             : 'Espace Propriétaire',
       ),
-      const Text('Gérez vos logements simplement.'),
-      const SizedBox(height: 22),
+      Text('Gérez vos logements simplement.', style: TerangaTypography.body),
+      const SizedBox(height: TerangaSpacing.xl),
       responsiveSections(
         [
           tile(
-            Icons.add_home_outlined,
+            LucideIcons.house_plus,
             'Proposer un logement',
             'draft',
             primary: true,
           ),
-          tile(Icons.home_work_outlined, 'Mes annonces', 'list'),
+          tile(LucideIcons.building_complex, 'Mes annonces', 'list'),
         ],
         [
-          const SizedBox(height: 22),
-          const Text(
-            'Mes annonces récentes',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: TerangaSpacing.xl),
+          Text('Mes annonces récentes', style: TerangaTypography.cardTitle.copyWith(fontSize: 18)),
+          const SizedBox(height: TerangaSpacing.md),
           TenantNotice(unavailable),
           action('Voir toutes mes annonces', () => go('list'), secondary: true),
         ],
@@ -466,35 +439,25 @@ class _OwnerFlowState extends State<OwnerFlow> {
     String target,
   ) => Expanded(
     child: Card(
-      color: Colors.white,
+      color: TerangaColors.white,
       margin: const EdgeInsets.all(4),
       child: InkWell(
         onTap: () => go(target),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(TerangaRadius.card),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(TerangaSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 45, color: tenantGreen),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                  color: tenantInk,
-                ),
-              ),
+              Icon(icon, size: 40, color: TerangaColors.gold),
+              const SizedBox(height: TerangaSpacing.md),
+              Text(label, style: TerangaTypography.cardTitle.copyWith(fontSize: 13)),
               const SizedBox(height: 6),
-              Text(
-                description,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 8),
+              Text(description, style: TerangaTypography.meta),
+              const SizedBox(height: TerangaSpacing.sm),
               const Align(
                 alignment: Alignment.centerRight,
-                child: Icon(Icons.chevron_right, color: tenantGreen),
+                child: Icon(LucideIcons.chevron_right, color: TerangaColors.gold),
               ),
             ],
           ),
@@ -505,16 +468,12 @@ class _OwnerFlowState extends State<OwnerFlow> {
   Widget agencyHome() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const SizedBox(height: 18),
+      const SizedBox(height: TerangaSpacing.lg),
       Text(
         owner
             ? widget.account!.profile!.agencyName!
             : 'Espace Agence immobilière',
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF6B7280),
-        ),
+        style: TerangaTypography.meta.copyWith(fontWeight: FontWeight.w700),
       ),
       title('Gérez vos logements\nsimplement'),
       responsiveSections(
@@ -524,13 +483,13 @@ class _OwnerFlowState extends State<OwnerFlow> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 agencyTile(
-                  Icons.add_home_outlined,
+                  LucideIcons.house_plus,
                   'Proposer un logement',
                   'Ajoutez un logement à mettre en location.',
                   'draft',
                 ),
                 agencyTile(
-                  Icons.description_outlined,
+                  LucideIcons.file_text,
                   'Mes annonces',
                   'Consultez et suivez vos annonces.',
                   'list',
@@ -540,16 +499,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
           ),
         ],
         [
-          const SizedBox(height: 18),
-          const Text(
-            'Annonces récentes',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: tenantInk,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: TerangaSpacing.lg),
+          Text('Annonces récentes', style: TerangaTypography.cardTitle.copyWith(fontSize: 17)),
+          const SizedBox(height: TerangaSpacing.md),
           TenantNotice(unavailable),
           action(
             'Voir toutes mes annonces →',
@@ -577,30 +529,25 @@ class _OwnerFlowState extends State<OwnerFlow> {
             Center(
               child: CircleAvatar(
                 radius: 45,
-                backgroundColor: const Color(0xFFD9EEE3),
+                backgroundColor: TerangaColors.beige,
                 child: initials == null
-                    ? const Icon(Icons.apartment, color: tenantGreen, size: 40)
+                    ? const Icon(LucideIcons.building_complex, color: TerangaColors.gold, size: 36)
                     : Text(
                         initials,
-                        style: const TextStyle(
-                          color: tenantGreen,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
+                        style: TerangaTypography.sectionTitle.copyWith(
+                          color: TerangaColors.gold,
+                          fontSize: 26,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: TerangaSpacing.lg),
             Text(
               profile?.agencyName ?? 'Aucune agence connectée',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: tenantInk,
-              ),
+              style: TerangaTypography.cardTitle.copyWith(fontSize: 19),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: TerangaSpacing.xl),
             agencyProfileField('Responsable', profile?.name),
             agencyProfileField('Téléphone / WhatsApp', profile?.phoneWhatsApp),
             agencyProfileField(
@@ -610,13 +557,13 @@ class _OwnerFlowState extends State<OwnerFlow> {
           ],
           [
             tile(
-              Icons.person_outline,
+              LucideIcons.user,
               'Modifier les informations',
               'account',
               enabled: owner,
             ),
             tile(
-              Icons.lock_outline,
+              LucideIcons.lock,
               'Changer le mot de passe',
               'password',
               enabled: owner,
@@ -654,19 +601,13 @@ class _OwnerFlowState extends State<OwnerFlow> {
   }
 
   Widget agencyProfileField(String label, String? value) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.only(bottom: TerangaSpacing.md),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value ?? 'Non renseigné',
-          style: const TextStyle(color: tenantInk),
-        ),
+        Text(label, style: TerangaTypography.meta),
+        const SizedBox(height: TerangaSpacing.xs),
+        Text(value ?? 'Non renseigné', style: TerangaTypography.body),
       ],
     ),
   );
@@ -684,25 +625,17 @@ class _OwnerFlowState extends State<OwnerFlow> {
   }
 
   Widget section(IconData icon, String label) => Padding(
-    padding: const EdgeInsets.only(top: 12, bottom: 10),
+    padding: const EdgeInsets.only(top: TerangaSpacing.md, bottom: TerangaSpacing.sm),
     child: Row(
       children: [
-        Icon(icon, color: tenantGreen, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: tenantGreen,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+        Icon(icon, color: TerangaColors.gold, size: 20),
+        const SizedBox(width: TerangaSpacing.sm),
+        Expanded(child: Text(label, style: TerangaTypography.cardTitle)),
       ],
     ),
   );
   Widget photoSlots() => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: TerangaSpacing.md),
     child: Row(
       children: [
         for (var i = 0; i < 3; i++)
@@ -711,11 +644,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
               height: 62,
               margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F3F5),
-                border: Border.all(color: const Color(0xFFE3E7EA)),
-                borderRadius: BorderRadius.circular(8),
+                color: TerangaColors.beige,
+                border: Border.all(color: TerangaColors.border),
+                borderRadius: BorderRadius.circular(TerangaRadius.field),
               ),
-              child: const Icon(Icons.image_outlined, color: Colors.grey),
+              child: const Icon(LucideIcons.image, color: TerangaColors.lightBrown),
             ),
           ),
       ],
@@ -723,24 +656,20 @@ class _OwnerFlowState extends State<OwnerFlow> {
   );
   Widget photos() => Container(
     height: 135,
-    margin: const EdgeInsets.symmetric(vertical: 12),
+    margin: const EdgeInsets.symmetric(vertical: TerangaSpacing.md),
     decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: Colors.grey.shade300),
-      borderRadius: BorderRadius.circular(14),
+      color: TerangaColors.white,
+      border: Border.all(color: TerangaColors.border),
+      borderRadius: BorderRadius.circular(TerangaRadius.card),
     ),
-    child: const Center(
+    child: Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.add_photo_alternate_outlined,
-            size: 36,
-            color: tenantGreen,
-          ),
-          SizedBox(height: 8),
-          Text('Photos du logement'),
-          Text('Ajout de photos indisponible', style: TextStyle(fontSize: 11)),
+          const Icon(LucideIcons.image_plus, size: 32, color: TerangaColors.gold),
+          const SizedBox(height: TerangaSpacing.sm),
+          Text('Photos du logement', style: TerangaTypography.body),
+          Text('Ajout de photos indisponible', style: TerangaTypography.meta),
         ],
       ),
     ),
@@ -754,19 +683,20 @@ class _OwnerFlowState extends State<OwnerFlow> {
   ) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      Text(label, style: TerangaTypography.meta.copyWith(color: TerangaColors.deepBrown, fontWeight: FontWeight.w700)),
       Wrap(
-        spacing: 8,
+        spacing: TerangaSpacing.sm,
         children: [
           for (final value in values)
             ChoiceChip(
               label: Text(text(value)),
               selected: value == selected,
               onSelected: (_) => setState(() => select(value)),
+              selectedColor: TerangaColors.gold.withValues(alpha: 0.2),
             ),
         ],
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: TerangaSpacing.md),
     ],
   );
   Widget draft() => Form(
@@ -777,16 +707,16 @@ class _OwnerFlowState extends State<OwnerFlow> {
         title('Proposer un logement'),
         responsiveSections(
           [
-            section(Icons.camera_alt_outlined, 'Photos du logement'),
+            section(LucideIcons.camera, 'Photos du logement'),
             photos(),
             photoSlots(),
-            section(Icons.location_on_outlined, 'Où se trouve le logement ?'),
+            section(LucideIcons.map_pin, 'Où se trouve le logement ?'),
             input('region', 'Région'),
             input('city', 'Ville'),
             input('district', 'Quartier'),
           ],
           [
-            section(Icons.home_outlined, 'Le logement'),
+            section(LucideIcons.house, 'Le logement'),
             chips(
               'Type de logement',
               HousingType.values,
@@ -813,9 +743,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
               'Prix mensuel (FCFA)',
               keyboard: TextInputType.number,
             ),
-            section(Icons.description_outlined, 'Description'),
+            section(LucideIcons.file_text, 'Description'),
             input('description', 'Description', lines: 4),
-            section(Icons.calendar_month_outlined, 'Disponibilité'),
+            section(LucideIcons.calendar, 'Disponibilité'),
             chips(
               'Disponibilité',
               AvailabilityMode.values,
@@ -859,10 +789,10 @@ class _OwnerFlowState extends State<OwnerFlow> {
           'Votre annonce ne sera pas publiée immédiatement. Teranga Immo la contrôlera avant sa mise en ligne.',
           warning: true,
         ),
-        const SizedBox(height: 10),
-        const Text(
+        const SizedBox(height: TerangaSpacing.sm),
+        Text(
           'Brouillon local non sauvegardé : quitter ce parcours efface les informations saisies.',
-          style: TextStyle(fontSize: 11),
+          style: TerangaTypography.meta,
         ),
       ],
     ),
@@ -871,8 +801,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       title('Vérifiez votre annonce'),
-      const Text(
+      Text(
         'Vérifiez les informations avant de les envoyer à Teranga Immo.',
+        style: TerangaTypography.body,
       ),
       responsiveSections(
         [photos(), photoSlots()],
@@ -880,43 +811,41 @@ class _OwnerFlowState extends State<OwnerFlow> {
           title('${fields['rent']!.text} FCFA / mois'),
           Text(
             '${fields['district']!.text}, ${fields['city']!.text}, ${fields['region']!.text}',
+            style: TerangaTypography.body,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: TerangaSpacing.md),
           Text(
             '${housingType.databaseValue} · $bedrooms chambre(s) · ${furnished ? 'Meublé' : 'Non meublé'}',
+            style: TerangaTypography.body,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: TerangaSpacing.lg),
           Text(
             availability == AvailabilityMode.maintenant
                 ? 'Disponible maintenant'
                 : 'Disponible le ${availableFrom!.day}/${availableFrom!.month}/${availableFrom!.year}',
+            style: TerangaTypography.body,
           ),
-          const SizedBox(height: 20),
-          const Text(
-            'Description',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          Text(fields['description']!.text),
-          const SizedBox(height: 20),
-          const Text(
-            'Contact pour cette annonce',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
+          const SizedBox(height: TerangaSpacing.xl),
+          Text('Description', style: TerangaTypography.cardTitle),
+          Text(fields['description']!.text, style: TerangaTypography.body),
+          const SizedBox(height: TerangaSpacing.xl),
+          Text('Contact pour cette annonce', style: TerangaTypography.cardTitle),
           Text(
             owner
                 ? widget.account!.profile!.phoneWhatsApp ??
                       widget.account!.user!.email ??
                       'Contact non renseigné'
                 : 'Connectez-vous pour renseigner votre contact.',
+            style: TerangaTypography.body,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: TerangaSpacing.xl),
         ],
       ),
       const TenantNotice(
         'Annonce non publiée · contrôle non commencé',
         warning: true,
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: TerangaSpacing.md),
       TenantNotice(unavailable),
       action('Modifier', () => go('draft'), secondary: true),
       action('Envoyer à Teranga Immo', null),
@@ -929,11 +858,11 @@ class _OwnerFlowState extends State<OwnerFlow> {
   Widget confirmation() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const SizedBox(height: 25),
-      const Icon(Icons.description_outlined, color: tenantGreen, size: 85),
+      const SizedBox(height: TerangaSpacing.xl),
+      const Icon(LucideIcons.file_text, color: TerangaColors.gold, size: 80),
       title('Aucun envoi confirmé'),
-      const Text('Votre annonce n’a pas été envoyée à Teranga Immo.'),
-      const SizedBox(height: 18),
+      Text('Votre annonce n’a pas été envoyée à Teranga Immo.', style: TerangaTypography.body),
+      const SizedBox(height: TerangaSpacing.lg),
       TenantNotice(unavailable, warning: true),
       action('Voir mes annonces', () => go('list')),
       action('Retour à l’accueil', () => go('home'), secondary: true),
@@ -945,15 +874,15 @@ class _OwnerFlowState extends State<OwnerFlow> {
       title('Mes annonces'),
       responsiveSections(
         [
-          const Text('Suivez et gérez vos logements.'),
+          Text('Suivez et gérez vos logements.', style: TerangaTypography.body),
           action('Proposer un logement', () => go('draft')),
         ],
         [
-          const SizedBox(height: 20),
-          const Icon(Icons.home_work_outlined, size: 64, color: tenantGreen),
-          const SizedBox(height: 12),
-          const Text('Aucune annonce chargée', textAlign: TextAlign.center),
-          const SizedBox(height: 18),
+          const SizedBox(height: TerangaSpacing.lg),
+          const Icon(LucideIcons.building_complex, size: 56, color: TerangaColors.gold),
+          const SizedBox(height: TerangaSpacing.md),
+          Text('Aucune annonce chargée', textAlign: TextAlign.center, style: TerangaTypography.body),
+          const SizedBox(height: TerangaSpacing.lg),
           TenantNotice(unavailable),
           action(
             'Correction demandée : état indisponible',
@@ -977,16 +906,14 @@ class _OwnerFlowState extends State<OwnerFlow> {
         'Aucune demande de correction de l’administration n’a été chargée.',
         warning: true,
       ),
-      const SizedBox(height: 20),
-      const Text(
-        'À corriger',
-        style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 12),
+      const SizedBox(height: TerangaSpacing.lg),
+      Text('À corriger', style: TerangaTypography.cardTitle.copyWith(fontSize: 19)),
+      const SizedBox(height: TerangaSpacing.md),
       TenantNotice(unavailable),
-      const SizedBox(height: 15),
-      const Text(
+      const SizedBox(height: TerangaSpacing.md),
+      Text(
         'Après correction et nouvel envoi confirmé, votre annonce sera de nouveau soumise au contrôle de Teranga Immo.',
+        style: TerangaTypography.body,
       ),
       action('Corriger mon annonce', null),
       action('Retour à mes annonces', () => go('list'), secondary: true),
@@ -999,9 +926,10 @@ class _OwnerFlowState extends State<OwnerFlow> {
       const TenantNotice(
         'Sélectionnez une annonce chargée depuis le serveur pour consulter son état.',
       ),
-      const SizedBox(height: 16),
-      const Text(
+      const SizedBox(height: TerangaSpacing.lg),
+      Text(
         'La publication et le retrait restent soumis à l’administration. Aucune annonce ne peut être publiée ou retirée depuis cet écran sans confirmation du serveur.',
+        style: TerangaTypography.body,
       ),
       action('Demander le retrait', null),
       action('Retour à mes annonces', () => go('list'), secondary: true),
@@ -1013,32 +941,33 @@ class _OwnerFlowState extends State<OwnerFlow> {
       title('Mon profil'),
       responsiveSections(
         [
-          const Center(
+          Center(
             child: CircleAvatar(
               radius: 38,
-              backgroundColor: Color(0xFFE6F1E7),
-              child: Icon(Icons.person_outline, color: tenantGreen, size: 44),
+              backgroundColor: TerangaColors.beige,
+              child: const Icon(LucideIcons.user, color: TerangaColors.gold, size: 40),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: TerangaSpacing.lg),
           Text(
             owner ? widget.account!.profile!.name : 'Aucun compte connecté',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TerangaTypography.cardTitle.copyWith(fontSize: 20),
           ),
-          const Text('Propriétaire', textAlign: TextAlign.center),
-          const SizedBox(height: 15),
+          Text('Propriétaire', textAlign: TextAlign.center, style: TerangaTypography.meta),
+          const SizedBox(height: TerangaSpacing.lg),
           if (owner) ...[
             Text(
               widget.account!.profile!.phoneWhatsApp ??
                   'Téléphone non renseigné',
+              style: TerangaTypography.body,
             ),
-            Text(widget.account!.user!.email ?? 'E-mail non renseigné'),
+            Text(widget.account!.user!.email ?? 'E-mail non renseigné', style: TerangaTypography.body),
           ],
         ],
         [
-          tile(Icons.edit_outlined, 'Modifier mes informations', 'account'),
-          tile(Icons.lock_outline, 'Changer mon mot de passe', 'password'),
+          tile(LucideIcons.pencil, 'Modifier mes informations', 'account'),
+          tile(LucideIcons.lock, 'Changer mon mot de passe', 'password'),
           action(
             'Se déconnecter',
             authenticated
@@ -1169,33 +1098,33 @@ class _OwnerFlowState extends State<OwnerFlow> {
       _ => 0,
     };
     return Scaffold(
-      backgroundColor: tenantBackground,
+      backgroundColor: TerangaColors.ivory,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (desktop && screen != 'auth' && screen != 'forgot')
             SafeArea(
               child: NavigationRail(
-                backgroundColor: tenantBackground,
+                backgroundColor: TerangaColors.ivory,
                 selectedIndex: selectedIndex,
                 labelType: NavigationRailLabelType.all,
                 onDestinationSelected: (index) =>
                     go(['home', 'draft', 'list', 'profile'][index]),
                 destinations: const [
                   NavigationRailDestination(
-                    icon: Icon(Icons.home_outlined),
+                    icon: Icon(LucideIcons.house),
                     label: Text('Accueil'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.add_circle_outline),
+                    icon: Icon(LucideIcons.circle_plus),
                     label: Text('Proposer'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.home_work_outlined),
+                    icon: Icon(LucideIcons.building_complex),
                     label: Text('Mes annonces'),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.person_outline),
+                    icon: Icon(LucideIcons.user),
                     label: Text('Profil'),
                   ),
                 ],
@@ -1228,14 +1157,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
                                   'account' || 'password' => 'profile',
                                   _ => 'list',
                                 }),
-                                icon: const Icon(Icons.arrow_back),
+                                icon: const Icon(LucideIcons.arrow_left),
                               ),
-                            Image.asset(
-                              'assets/brand/logo_original.png',
-                              width: 76,
-                              height: 76,
-                              semanticLabel: 'Logo original Teranga Immo',
-                            ),
+                            const TerangaLogo(variant: TerangaLogoVariant.compact),
                             const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -1243,15 +1167,14 @@ class _OwnerFlowState extends State<OwnerFlow> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE6F1E7),
-                                borderRadius: BorderRadius.circular(24),
+                                color: TerangaColors.beige,
+                                borderRadius: BorderRadius.circular(TerangaRadius.badge + 16),
                               ),
                               child: Text(
                                 badge,
-                                style: const TextStyle(
-                                  color: tenantGreen,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                style: TerangaTypography.meta.copyWith(
+                                  color: TerangaColors.deepBrown,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -1315,19 +1238,19 @@ class _OwnerFlowState extends State<OwnerFlow> {
                         go(['home', 'draft', 'list', 'profile'][index]),
                     destinations: const [
                       NavigationDestination(
-                        icon: Icon(Icons.home_outlined),
+                        icon: Icon(LucideIcons.house),
                         label: 'Accueil',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.add_circle_outline),
+                        icon: Icon(LucideIcons.circle_plus),
                         label: 'Proposer',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.home_work_outlined),
+                        icon: Icon(LucideIcons.building_complex),
                         label: 'Mes annonces',
                       ),
                       NavigationDestination(
-                        icon: Icon(Icons.person_outline),
+                        icon: Icon(LucideIcons.user),
                         label: 'Profil',
                       ),
                     ],

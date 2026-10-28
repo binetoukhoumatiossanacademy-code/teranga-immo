@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
+import 'design_system/design_system.dart';
 import 'home.dart';
-import 'teranga_theme.dart';
 
 class HomeArt extends StatelessWidget {
   final Home home;
@@ -15,17 +16,19 @@ class HomeArt extends StatelessWidget {
       children: [
         Center(
           child: Icon(
-            home.type == 'Maison' ? Icons.cottage_outlined : Icons.apartment,
-            size: 106,
-            color: green.withValues(alpha: .65),
+            home.type == 'Maison' ? LucideIcons.house : LucideIcons.building_complex,
+            size: 96,
+            color: TerangaColors.deepBrown.withValues(alpha: .5),
           ),
         ),
         if (home.isDemo)
-          const Positioned(
+          Positioned(
             left: 12,
             top: 12,
             child: Chip(
-              label: Text('Exemple fictif', style: TextStyle(fontSize: 11)),
+              label: const Text('Exemple fictif'),
+              backgroundColor: TerangaColors.white.withValues(alpha: 0.85),
+              labelStyle: TerangaTypography.meta.copyWith(fontSize: 11),
             ),
           ),
         Positioned(
@@ -33,7 +36,7 @@ class HomeArt extends StatelessWidget {
           bottom: 8,
           child: Text(
             home.isDemo ? 'Illustration' : 'Photo non renseignée',
-            style: const TextStyle(fontSize: 11),
+            style: TerangaTypography.meta,
           ),
         ),
       ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'account_service.dart';
+import 'design_system/design_system.dart';
 import 'models/account_role.dart';
 import 'models/user_profile.dart';
 
@@ -244,21 +246,18 @@ class _AccountPageState extends State<AccountPage> {
         constraints: const BoxConstraints(maxWidth: 480),
         child: Card(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(TerangaSpacing.xl),
             child: Form(
               key: form,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(title, style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 20),
-                  if (account.loading || busy) const LinearProgressIndicator(),
+                  const Icon(LucideIcons.user, size: 36, color: TerangaColors.gold),
+                  const SizedBox(height: TerangaSpacing.md),
+                  Text(title, style: TerangaTypography.sectionTitle.copyWith(fontSize: 22)),
+                  const SizedBox(height: TerangaSpacing.xl),
+                  if (account.loading || busy)
+                    const LinearProgressIndicator(color: TerangaColors.gold),
                   if (account.message != null) ...[
                     Text(account.message!),
                     TextButton(
