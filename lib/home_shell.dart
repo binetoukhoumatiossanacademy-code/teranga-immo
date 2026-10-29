@@ -296,7 +296,7 @@ class _HomeShellState extends State<HomeShell> {
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1120),
+                constraints: BoxConstraints(maxWidth: page == 0 ? double.infinity : 1120),
                 child: SingleChildScrollView(
                   padding: EdgeInsets.all(page == 0 ? 0 : 20),
                   child: pages[page],

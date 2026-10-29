@@ -51,59 +51,70 @@ class _HomeLandingState extends State<HomeLanding> {
     final wide = width >= TerangaBreakpoints.tablet;
     final maxContentWidth = width >= TerangaBreakpoints.desktop ? 1120.0 : double.infinity;
 
+    Widget centered(Widget child) => Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxContentWidth),
+        child: child,
+      ),
+    );
+
     return SafeArea(
       bottom: false,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxContentWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(onFavorites: widget.onFavorites, onProfile: widget.onProfile),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  wide ? 40 : TerangaSpacing.lg,
-                  TerangaSpacing.sm,
-                  wide ? 40 : TerangaSpacing.lg,
-                  0,
-                ),
-                child: wide
-                    ? _WideHero(onSearch: widget.onSearch)
-                    : _MobileHero(onSearch: widget.onSearch),
-              ),
-              SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.huge),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
-                child: _ExploreByNeed(
-                  wide: wide,
-                  onSearch: widget.onSearch,
-                  onPublish: widget.onPublish,
-                  onFavorites: widget.onFavorites,
-                ),
-              ),
-              SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
-                child: _FeaturedSection(
-                  wide: wide,
-                  connected: widget.connected,
-                  announcement: widget.announcement,
-                  status: widget.status,
-                  favorites: _favorites,
-                  onToggleFavorite: _toggleFavorite,
-                  onSeeAll: widget.onSearch,
-                  onOpen: widget.onDetail,
-                ),
-              ),
-              SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
-                child: _OwnerPanel(onPublish: widget.onPublish),
-              ),
-              const SizedBox(height: TerangaSpacing.huge),
-            ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          centered(
+            _Header(onFavorites: widget.onFavorites, onProfile: widget.onProfile),
           ),
-        ),
+          if (wide)
+            _WideHeroBanner(onSearch: widget.onSearch, maxContentWidth: maxContentWidth)
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                TerangaSpacing.lg,
+                TerangaSpacing.sm,
+                TerangaSpacing.lg,
+                0,
+              ),
+              child: _MobileHero(onSearch: widget.onSearch),
+            ),
+          SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.huge),
+          centered(
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              child: _ExploreByNeed(
+                wide: wide,
+                onSearch: widget.onSearch,
+                onPublish: widget.onPublish,
+                onFavorites: widget.onFavorites,
+              ),
+            ),
+          ),
+          SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
+          centered(
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              child: _FeaturedSection(
+                wide: wide,
+                connected: widget.connected,
+                announcement: widget.announcement,
+                status: widget.status,
+                favorites: _favorites,
+                onToggleFavorite: _toggleFavorite,
+                onSeeAll: widget.onSearch,
+                onOpen: widget.onDetail,
+              ),
+            ),
+          ),
+          SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
+          centered(
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              child: _OwnerPanel(onPublish: widget.onPublish),
+            ),
+          ),
+          const SizedBox(height: TerangaSpacing.huge),
+        ],
       ),
     );
   }
@@ -261,65 +272,109 @@ class _MobileHero extends StatelessWidget {
   );
 }
 
-class _WideHero extends StatelessWidget {
-  const _WideHero({required this.onSearch});
+/// Bannière d'accueil « site web » : photo en fond plein écran (hors de
+/// la colonne de contenu centrée), avec dégradé et texte superposés —
+/// référence maquette « choice », adaptée en plein écran pour le web.
+class _WideHeroBanner extends StatelessWidget {
+  const _WideHeroBanner({required this.onSearch, required this.maxContentWidth});
   final VoidCallback onSearch;
+  final double maxContentWidth;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Stack(
+      alignment: Alignment.center,
       children: [
-        Expanded(
-          flex: 6,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('LE SÉNÉGAL, À VOTRE ADRESSE', style: TerangaTypography.eyebrow),
-              const SizedBox(height: TerangaSpacing.md),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Trouvez le lieu\n',
-                      style: TerangaTypography.heroTitle.copyWith(
-                        fontSize: TerangaTypography.scaled(34, width),
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'qui vous ressemble.',
-                      style: TerangaTypography.heroTitleItalic.copyWith(
-                        fontSize: TerangaTypography.scaled(34, width),
-                      ),
-                    ),
+        SizedBox(
+          height: 560,
+          width: double.infinity,
+          child: Image.asset('assets/homes/salon_demo.png', fit: BoxFit.cover),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  TerangaColors.ivory,
+                  TerangaColors.ivory.withValues(alpha: 0.9),
+                  TerangaColors.ivory.withValues(alpha: 0.08),
+                ],
+                stops: const [0, 0.42, 0.66],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    TerangaColors.ivory.withValues(alpha: 0),
+                    TerangaColors.ivory,
                   ],
                 ),
               ),
-              const SizedBox(height: TerangaSpacing.lg),
-              Text(
-                'Louez votre prochain logement ou publiez votre bien, en toute simplicité.',
-                style: TerangaTypography.body.copyWith(
-                  color: TerangaColors.taupe,
-                  fontSize: 17,
-                ),
-              ),
-              const SizedBox(height: TerangaSpacing.xxl),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: _SearchField(onTap: onSearch),
-              ),
-            ],
+              child: const SizedBox(height: 90, width: double.infinity),
+            ),
           ),
         ),
-        const SizedBox(width: TerangaSpacing.xxxl),
-        Expanded(
-          flex: 5,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(TerangaRadius.card),
-            child: AspectRatio(
-              aspectRatio: 4 / 3,
-              child: Image.asset('assets/homes/salon_demo.png', fit: BoxFit.cover),
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'LE SÉNÉGAL, À VOTRE ADRESSE',
+                    style: TerangaTypography.eyebrow,
+                  ),
+                  const SizedBox(height: TerangaSpacing.md),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Trouvez le lieu\n',
+                          style: TerangaTypography.heroTitle.copyWith(
+                            fontSize: TerangaTypography.scaled(34, width),
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'qui vous ressemble.',
+                          style: TerangaTypography.heroTitleItalic.copyWith(
+                            fontSize: TerangaTypography.scaled(34, width),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: TerangaSpacing.lg),
+                  SizedBox(
+                    width: 480,
+                    child: Text(
+                      'Louez votre prochain logement ou publiez votre bien, en toute '
+                      'simplicité.',
+                      style: TerangaTypography.body.copyWith(
+                        color: TerangaColors.taupe,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: TerangaSpacing.xxl),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: _SearchField(onTap: onSearch),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
