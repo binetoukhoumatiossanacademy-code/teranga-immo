@@ -15,6 +15,11 @@ enum TerangaLogoVariant {
   /// Monogramme + nom, en taille réduite pour l'en-tête mobile compact.
   compact,
 
+  /// Monogramme au-dessus de « TERANGA IMMO », centré, sans séparateur.
+  /// Position d'ouverture (splash, étapes d'orientation) — référence
+  /// maquette « accueil ».
+  stacked,
+
   /// Monogramme seul (favicon, splash, vignette).
   markOnly,
 }
@@ -56,14 +61,44 @@ class TerangaLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wordColor = textColor ?? color;
+    final defaultMarkSize = switch (variant) {
+      TerangaLogoVariant.compact => 34.0,
+      TerangaLogoVariant.stacked => 56.0,
+      _ => 44.0,
+    };
     final mark = SvgPicture.asset(
       _asset,
-      height: markSize ?? (variant == TerangaLogoVariant.compact ? 34 : 44),
+      height: markSize ?? defaultMarkSize,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       semanticsLabel: 'Monogramme Teranga Immo',
     );
 
     if (variant == TerangaLogoVariant.markOnly) return mark;
+
+    if (variant == TerangaLogoVariant.stacked) {
+      final stackedMarkSize = markSize ?? defaultMarkSize;
+      final stackedStyle = stackedMarkSize >= 48
+          ? TerangaTypography.wordmark
+          : TerangaTypography.wordmarkCompact;
+      return Semantics(
+        label: 'Teranga Immo',
+        excludeSemantics: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            mark,
+            SizedBox(height: stackedMarkSize >= 48 ? 10 : 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'TERANGA IMMO',
+                style: stackedStyle.copyWith(color: wordColor),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     final wordmarkStyle = variant == TerangaLogoVariant.compact
         ? TerangaTypography.wordmarkCompact

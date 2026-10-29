@@ -63,7 +63,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: TerangaSpacing.xxl),
-                  child: TerangaLogo(),
+                  child: TerangaLogo(variant: TerangaLogoVariant.stacked),
                 ),
                 Expanded(
                   child: PageView.builder(

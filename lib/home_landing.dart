@@ -71,7 +71,7 @@ class _HomeLandingState extends State<HomeLanding> {
                     ? _WideHero(onSearch: widget.onSearch)
                     : _MobileHero(onSearch: widget.onSearch),
               ),
-              SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
+              SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.huge),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
                 child: _ExploreByNeed(
@@ -183,26 +183,80 @@ class _MobileHero extends StatelessWidget {
   final VoidCallback onSearch;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
     children: [
-      const Text('LE SÉNÉGAL, À VOTRE ADRESSE', style: TerangaTypography.eyebrow),
-      const SizedBox(height: TerangaSpacing.sm),
-      RichText(
-        text: const TextSpan(
+      ClipRRect(
+        borderRadius: BorderRadius.circular(TerangaRadius.card + 6),
+        child: Stack(
           children: [
-            TextSpan(text: 'Trouvez le lieu\n', style: TerangaTypography.heroTitle),
-            TextSpan(text: 'qui vous ressemble.', style: TerangaTypography.heroTitleItalic),
+            Image.asset(
+              'assets/homes/salon_demo.png',
+              height: 430,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      TerangaColors.ivory,
+                      TerangaColors.ivory.withValues(alpha: 0.78),
+                      TerangaColors.ivory.withValues(alpha: 0),
+                    ],
+                    stops: const [0, 0.34, 0.62],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      const SizedBox(height: TerangaSpacing.md),
-      Text(
-        'Louez votre prochain logement ou publiez votre bien, en toute simplicité.',
-        style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
+      Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            TerangaSpacing.lg,
+            TerangaSpacing.lg,
+            TerangaSpacing.lg,
+            0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('LE SÉNÉGAL, À VOTRE ADRESSE', style: TerangaTypography.eyebrow),
+              const SizedBox(height: TerangaSpacing.sm),
+              RichText(
+                text: const TextSpan(
+                  children: [
+                    TextSpan(text: 'Trouvez le lieu\n', style: TerangaTypography.heroTitle),
+                    TextSpan(
+                      text: 'qui vous ressemble.',
+                      style: TerangaTypography.heroTitleItalic,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: TerangaSpacing.md),
+              Text(
+                'Louez votre prochain logement ou publiez votre bien, en toute simplicité.',
+                style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
+              ),
+            ],
+          ),
+        ),
       ),
-      const SizedBox(height: TerangaSpacing.xl),
-      _SearchField(onTap: onSearch),
+      Positioned(
+        left: TerangaSpacing.lg,
+        right: TerangaSpacing.lg,
+        bottom: -28,
+        child: _SearchField(onTap: onSearch),
+      ),
     ],
   );
 }
@@ -282,6 +336,8 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) => Material(
     color: TerangaColors.white,
     borderRadius: BorderRadius.circular(TerangaRadius.field + 3),
+    elevation: 6,
+    shadowColor: TerangaColors.deepBrown.withValues(alpha: 0.22),
     child: InkWell(
       borderRadius: BorderRadius.circular(TerangaRadius.field + 3),
       onTap: onTap,
@@ -370,7 +426,7 @@ class _ExploreByNeed extends StatelessWidget {
           sectionTitle,
           const SizedBox(height: TerangaSpacing.lg),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(flex: 2, child: primary),
               const SizedBox(width: TerangaSpacing.lg),
@@ -391,7 +447,7 @@ class _ExploreByNeed extends StatelessWidget {
         primary,
         const SizedBox(height: TerangaSpacing.md),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: secondary[0]),
             const SizedBox(width: TerangaSpacing.md),
