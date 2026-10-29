@@ -49,7 +49,9 @@ class _HomeLandingState extends State<HomeLanding> {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final wide = width >= TerangaBreakpoints.tablet;
-    final maxContentWidth = width >= TerangaBreakpoints.desktop ? 1120.0 : double.infinity;
+    final maxContentWidth = width >= TerangaBreakpoints.desktop
+        ? 1120.0
+        : double.infinity;
 
     Widget centered(Widget child) => Center(
       child: ConstrainedBox(
@@ -64,10 +66,16 @@ class _HomeLandingState extends State<HomeLanding> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           centered(
-            _Header(onFavorites: widget.onFavorites, onProfile: widget.onProfile),
+            _Header(
+              onFavorites: widget.onFavorites,
+              onProfile: widget.onProfile,
+            ),
           ),
           if (wide)
-            _WideHeroBanner(onSearch: widget.onSearch, maxContentWidth: maxContentWidth)
+            _WideHeroBanner(
+              onSearch: widget.onSearch,
+              maxContentWidth: maxContentWidth,
+            )
           else
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -81,7 +89,9 @@ class _HomeLandingState extends State<HomeLanding> {
           SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.huge),
           centered(
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? 40 : TerangaSpacing.lg,
+              ),
               child: _ExploreByNeed(
                 wide: wide,
                 onSearch: widget.onSearch,
@@ -93,7 +103,9 @@ class _HomeLandingState extends State<HomeLanding> {
           SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
           centered(
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? 40 : TerangaSpacing.lg,
+              ),
               child: _FeaturedSection(
                 wide: wide,
                 connected: widget.connected,
@@ -109,7 +121,9 @@ class _HomeLandingState extends State<HomeLanding> {
           SizedBox(height: wide ? TerangaSpacing.xxxl : TerangaSpacing.xxl),
           centered(
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: wide ? 40 : TerangaSpacing.lg),
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? 40 : TerangaSpacing.lg,
+              ),
               child: _OwnerPanel(onPublish: widget.onPublish),
             ),
           ),
@@ -193,82 +207,106 @@ class _MobileHero extends StatelessWidget {
   const _MobileHero({required this.onSearch});
   final VoidCallback onSearch;
 
+  // Hauteur de la photo + marge pour que le champ de recherche, qui
+  // chevauche le bas de la photo, reste entièrement dans les limites du
+  // Stack : sans cela, la portion débordante n'est pas cliquable (le
+  // hit-test d'un Stack est borné par sa taille propre, quel que soit
+  // clipBehavior, qui ne concerne que le dessin).
+  static const double _photoHeight = 430;
+  static const double _searchFieldOverlap = 28;
+  static const double _stackHeight = _photoHeight + _searchFieldOverlap + 40;
+
   @override
-  Widget build(BuildContext context) => Stack(
-    clipBehavior: Clip.none,
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(TerangaRadius.card + 6),
-        child: Stack(
-          children: [
-            Image.asset(
-              'assets/homes/salon_demo.png',
-              height: 430,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      TerangaColors.ivory,
-                      TerangaColors.ivory.withValues(alpha: 0.78),
-                      TerangaColors.ivory.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.34, 0.62],
+  Widget build(BuildContext context) => SizedBox(
+    height: _stackHeight,
+    child: Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(TerangaRadius.card + 6),
+            child: Stack(
+              children: [
+                Image.asset(
+                  'assets/homes/salon_demo.png',
+                  height: _photoHeight,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          TerangaColors.ivory,
+                          TerangaColors.ivory.withValues(alpha: 0.78),
+                          TerangaColors.ivory.withValues(alpha: 0),
+                        ],
+                        stops: const [0, 0.34, 0.62],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-      Positioned(
-        left: 0,
-        right: 0,
-        top: 0,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            TerangaSpacing.lg,
-            TerangaSpacing.lg,
-            TerangaSpacing.lg,
-            0,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('LE SÉNÉGAL, À VOTRE ADRESSE', style: TerangaTypography.eyebrow),
-              const SizedBox(height: TerangaSpacing.sm),
-              RichText(
-                text: const TextSpan(
-                  children: [
-                    TextSpan(text: 'Trouvez le lieu\n', style: TerangaTypography.heroTitle),
-                    TextSpan(
-                      text: 'qui vous ressemble.',
-                      style: TerangaTypography.heroTitleItalic,
-                    ),
-                  ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              TerangaSpacing.lg,
+              TerangaSpacing.lg,
+              TerangaSpacing.lg,
+              0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LE SÉNÉGAL, À VOTRE ADRESSE',
+                  style: TerangaTypography.eyebrow,
                 ),
-              ),
-              const SizedBox(height: TerangaSpacing.md),
-              Text(
-                'Louez votre prochain logement ou publiez votre bien, en toute simplicité.',
-                style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
-              ),
-            ],
+                const SizedBox(height: TerangaSpacing.sm),
+                RichText(
+                  text: const TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Trouvez le lieu\n',
+                        style: TerangaTypography.heroTitle,
+                      ),
+                      TextSpan(
+                        text: 'qui vous ressemble.',
+                        style: TerangaTypography.heroTitleItalic,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: TerangaSpacing.md),
+                Text(
+                  'Louez votre prochain logement ou publiez votre bien, en toute simplicité.',
+                  style: TerangaTypography.body.copyWith(
+                    color: TerangaColors.taupe,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      Positioned(
-        left: TerangaSpacing.lg,
-        right: TerangaSpacing.lg,
-        bottom: -28,
-        child: _SearchField(onTap: onSearch),
-      ),
-    ],
+        Positioned(
+          left: TerangaSpacing.lg,
+          right: TerangaSpacing.lg,
+          top: _photoHeight - _searchFieldOverlap,
+          child: _SearchField(onTap: onSearch),
+        ),
+      ],
+    ),
   );
 }
 
@@ -276,7 +314,10 @@ class _MobileHero extends StatelessWidget {
 /// la colonne de contenu centrée), avec dégradé et texte superposés —
 /// référence maquette « choice », adaptée en plein écran pour le web.
 class _WideHeroBanner extends StatelessWidget {
-  const _WideHeroBanner({required this.onSearch, required this.maxContentWidth});
+  const _WideHeroBanner({
+    required this.onSearch,
+    required this.maxContentWidth,
+  });
   final VoidCallback onSearch;
   final double maxContentWidth;
 
@@ -404,17 +445,21 @@ class _SearchField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(LucideIcons.map_pin, size: 18, color: TerangaColors.lightBrown),
+            const Icon(
+              LucideIcons.map_pin,
+              size: 18,
+              color: TerangaColors.lightBrown,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Où cherchez-vous ?', style: TerangaTypography.bodyStrong),
                   Text(
-                    'Dakar, Ngor, Almadies…',
-                    style: TerangaTypography.meta,
+                    'Où cherchez-vous ?',
+                    style: TerangaTypography.bodyStrong,
                   ),
+                  Text('Dakar, Ngor, Almadies…', style: TerangaTypography.meta),
                 ],
               ),
             ),
@@ -424,7 +469,11 @@ class _SearchField extends StatelessWidget {
                 color: TerangaColors.gold,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.search, size: 18, color: TerangaColors.white),
+              child: const Icon(
+                LucideIcons.search,
+                size: 18,
+                color: TerangaColors.white,
+              ),
             ),
           ],
         ),
@@ -451,11 +500,15 @@ class _ExploreByNeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sectionTitle = Text('Explorer par besoin', style: TerangaTypography.sectionTitle);
+    final sectionTitle = Text(
+      'Explorer par besoin',
+      style: TerangaTypography.sectionTitle,
+    );
     final primary = _NeedCard(
       icon: LucideIcons.house,
       title: 'Louer',
-      description: 'Trouvez votre prochain chez-vous parmi les annonces disponibles.',
+      description:
+          'Trouvez votre prochain chez-vous parmi les annonces disponibles.',
       onTap: onSearch,
       emphasized: true,
     );
@@ -554,7 +607,9 @@ class _NeedCard extends StatelessWidget {
             Text(
               title,
               style: TerangaTypography.cardTitle.copyWith(
-                color: emphasized ? TerangaColors.white : TerangaColors.deepBrown,
+                color: emphasized
+                    ? TerangaColors.white
+                    : TerangaColors.deepBrown,
               ),
             ),
             const SizedBox(height: 4),
@@ -658,7 +713,8 @@ class _FeaturedSection extends StatelessWidget {
             children: [
               for (final card in cards) ...[
                 Expanded(child: card),
-                if (card != cards.last) const SizedBox(width: TerangaSpacing.lg),
+                if (card != cards.last)
+                  const SizedBox(width: TerangaSpacing.lg),
               ],
             ],
           )
@@ -667,7 +723,8 @@ class _FeaturedSection extends StatelessWidget {
             children: [
               for (final card in cards) ...[
                 card,
-                if (card != cards.last) const SizedBox(height: TerangaSpacing.lg),
+                if (card != cards.last)
+                  const SizedBox(height: TerangaSpacing.lg),
               ],
             ],
           ),
@@ -696,7 +753,9 @@ class _OwnerPanel extends StatelessWidget {
       children: [
         Text(
           'POUR LES PROPRIÉTAIRES',
-          style: TerangaTypography.eyebrow.copyWith(color: TerangaColors.champagne),
+          style: TerangaTypography.eyebrow.copyWith(
+            color: TerangaColors.champagne,
+          ),
         ),
         const SizedBox(height: TerangaSpacing.sm),
         Text(
