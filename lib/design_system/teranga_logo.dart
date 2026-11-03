@@ -57,6 +57,7 @@ class TerangaLogo extends StatelessWidget {
   final double? markSize;
 
   static const String _asset = 'assets/brand/teranga_mark.svg';
+  static const String _horizontalAsset = 'assets/brand/teranga_logo_horizontal.webp';
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +67,23 @@ class TerangaLogo extends StatelessWidget {
       TerangaLogoVariant.stacked => 56.0,
       _ => 44.0,
     };
+
+    // Le fichier officiel (lockup horizontal complet) est utilisé tel quel
+    // dès que la teinte demandée est la teinte d'origine — fidélité pixel
+    // par pixel au logo fourni, sans recomposition.
+    final isDefaultTint = color == TerangaColors.gold && textColor == null;
+    if (isDefaultTint &&
+        (variant == TerangaLogoVariant.horizontal || variant == TerangaLogoVariant.compact)) {
+      return Semantics(
+        label: 'Teranga Immo',
+        excludeSemantics: true,
+        child: Image.asset(
+          _horizontalAsset,
+          height: markSize ?? (variant == TerangaLogoVariant.compact ? 34 : 44),
+          fit: BoxFit.contain,
+        ),
+      );
+    }
     final mark = SvgPicture.asset(
       _asset,
       height: markSize ?? defaultMarkSize,

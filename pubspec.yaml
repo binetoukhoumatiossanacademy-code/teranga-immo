@@ -29,6 +29,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/logo_original.png
+    - assets/brand/teranga_logo_horizontal.webp
     - assets/brand/teranga_mark.svg
     - assets/brand/web_icons/
     - assets/homes/
