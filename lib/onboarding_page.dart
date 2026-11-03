@@ -182,7 +182,7 @@ class _SlideView extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.xl),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         RichText(
           text: TextSpan(
@@ -195,7 +195,7 @@ class _SlideView extends StatelessWidget {
         const SizedBox(height: TerangaSpacing.md),
         Text(
           slide.description,
-          style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
+          style: TerangaTypography.body.copyWith(color: Colors.black),
         ),
       ],
     ),
