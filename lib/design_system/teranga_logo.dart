@@ -74,9 +74,9 @@ class TerangaLogo extends StatelessWidget {
     final isDefaultTint = color == TerangaColors.gold && textColor == null;
     if (isDefaultTint && variant != TerangaLogoVariant.markOnly) {
       final imageHeight = markSize ?? switch (variant) {
-        TerangaLogoVariant.compact => 34.0,
-        TerangaLogoVariant.stacked => 50.0,
-        _ => 44.0,
+        TerangaLogoVariant.compact => 46.0,
+        TerangaLogoVariant.stacked => 84.0,
+        _ => 56.0,
       };
       return Semantics(
         label: 'Teranga Immo',
