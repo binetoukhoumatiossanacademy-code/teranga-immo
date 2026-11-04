@@ -87,19 +87,27 @@ class TerangaLogo extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             // Ombre portée épousant la forme du logo (et non un rectangle) :
-            // une copie assombrie et floutée, légèrement décalée, pour qu'il
-            // se détache mieux du fond quelle que soit la photo.
-            Positioned(
-              top: 2,
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    TerangaColors.deepBrown.withValues(alpha: 0.45),
-                    BlendMode.srcIn,
-                  ),
-                  child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+            // deux copies assombries et floutées — un halo large et doux,
+            // puis un contour plus net — pour qu'il se détache nettement
+            // du fond quelle que soit la photo derrière lui.
+            ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  TerangaColors.deepBrown.withValues(alpha: 0.85),
+                  BlendMode.srcIn,
                 ),
+                child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+              ),
+            ),
+            ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  TerangaColors.deepBrown.withValues(alpha: 0.9),
+                  BlendMode.srcIn,
+                ),
+                child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
               ),
             ),
             Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
