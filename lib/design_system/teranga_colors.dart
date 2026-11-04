@@ -29,9 +29,10 @@ abstract final class TerangaColors {
   // Accents dorés
   // ---------------------------------------------------------------------
 
-  /// Or mat — #B18A43. Logo, accents, éléments actifs, icônes de marque.
+  /// Or bronze — #96702F. Logo, accents, éléments actifs, icônes de
+  /// marque. Nuance plus profonde et moins jaune que l'or mat d'origine.
   /// Toujours un accent : ne jamais couvrir de grandes surfaces.
-  static const Color gold = Color(0xFFB18A43);
+  static const Color gold = Color(0xFF96702F);
 
   /// Or doux (Champagne) — #C6A36B. Accents secondaires, décorations
   /// fines, bordures mises en valeur.

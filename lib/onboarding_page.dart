@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'design_system/design_system.dart';
 
+/// Léger halo clair derrière le texte brun, pour renforcer sa lisibilité
+/// sur la photo sans changer sa couleur ni introduire de voile uniforme.
+const List<Shadow> _textPop = [
+  Shadow(color: Color(0x80FFFCF7), blurRadius: 10),
+  Shadow(color: Color(0x4DFFFCF7), blurRadius: 20),
+];
+
 /// Carrousel d'accueil avant le choix de profil — section 11.1 et
 /// référence « 1. Accueil » de la direction artistique.
 ///
@@ -68,10 +75,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    TerangaColors.ivory.withValues(alpha: 0.78),
-                    TerangaColors.ivory.withValues(alpha: 0.3),
-                    TerangaColors.ivory.withValues(alpha: 0.38),
-                    TerangaColors.ivory.withValues(alpha: 0.8),
+                    TerangaColors.ivory.withValues(alpha: 0.55),
+                    TerangaColors.ivory.withValues(alpha: 0.12),
+                    TerangaColors.ivory.withValues(alpha: 0.18),
+                    TerangaColors.ivory.withValues(alpha: 0.55),
                   ],
                   stops: const [0, 0.3, 0.72, 1],
                 ),
@@ -199,11 +206,17 @@ class _SlideView extends StatelessWidget {
               children: [
                 TextSpan(
                   text: '${slide.title}\n',
-                  style: TerangaTypography.heroTitle.copyWith(fontSize: titleSize),
+                  style: TerangaTypography.heroTitle.copyWith(
+                    fontSize: titleSize,
+                    shadows: _textPop,
+                  ),
                 ),
                 TextSpan(
                   text: slide.titleItalic,
-                  style: TerangaTypography.heroTitleItalic.copyWith(fontSize: titleSize),
+                  style: TerangaTypography.heroTitleItalic.copyWith(
+                    fontSize: titleSize,
+                    shadows: _textPop,
+                  ),
                 ),
               ],
             ),
@@ -216,6 +229,7 @@ class _SlideView extends StatelessWidget {
               color: Colors.black,
               fontSize: bodySize,
               fontWeight: FontWeight.w500,
+              shadows: _textPop,
             ),
           ),
         ],

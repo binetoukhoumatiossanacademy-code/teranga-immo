@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -81,7 +83,28 @@ class TerangaLogo extends StatelessWidget {
       return Semantics(
         label: 'Teranga Immo',
         excludeSemantics: true,
-        child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Ombre portée épousant la forme du logo (et non un rectangle) :
+            // une copie assombrie et floutée, légèrement décalée, pour qu'il
+            // se détache mieux du fond quelle que soit la photo.
+            Positioned(
+              top: 2,
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    TerangaColors.deepBrown.withValues(alpha: 0.45),
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+                ),
+              ),
+            ),
+            Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+          ],
+        ),
       );
     }
     final mark = SvgPicture.asset(
