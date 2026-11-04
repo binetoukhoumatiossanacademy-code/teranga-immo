@@ -88,7 +88,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       padding: const EdgeInsets.only(top: TerangaSpacing.xxl),
                       child: TerangaLogo(
                         variant: TerangaLogoVariant.stacked,
-                        markSize: wide ? 150 : 108,
+                        markSize: wide ? 190 : 138,
                       ),
                     ),
                     Expanded(
@@ -187,9 +187,11 @@ class _SlideView extends StatelessWidget {
     final bodySize = TerangaTypography.scaled(17, width);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.xl),
-      child: Column(
+      child: Align(
+        alignment: const Alignment(0, -0.35),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           RichText(
             textAlign: TextAlign.center,
@@ -217,6 +219,7 @@ class _SlideView extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
