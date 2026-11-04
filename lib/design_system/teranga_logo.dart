@@ -70,16 +70,24 @@ class TerangaLogo extends StatelessWidget {
       _ => 44.0,
     };
 
-    // Le fichier officiel (lockup horizontal complet) est utilisé tel quel
-    // dès que la teinte demandée est la teinte d'origine — fidélité pixel
-    // par pixel au logo fourni, sans recomposition.
+    // Le fichier officiel (lockup horizontal complet) sert de source pour
+    // toutes les teintes : à la teinte d'origine, il est utilisé tel quel
+    // (fidélité pixel par pixel) ; pour une autre teinte (ex. blanc sur
+    // photo), il est reteinté en conservant exactement les mêmes formes.
     final isDefaultTint = color == TerangaColors.gold && textColor == null;
-    if (isDefaultTint && variant != TerangaLogoVariant.markOnly) {
+    if (variant != TerangaLogoVariant.markOnly) {
       final imageHeight = markSize ?? switch (variant) {
         TerangaLogoVariant.compact => 46.0,
         TerangaLogoVariant.stacked => 84.0,
         _ => 56.0,
       };
+      Widget tinted(Color? tint) {
+        final img = Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain);
+        return tint == null
+            ? img
+            : ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.srcIn), child: img);
+      }
+
       return Semantics(
         label: 'Teranga Immo',
         excludeSemantics: true,
@@ -110,7 +118,7 @@ class TerangaLogo extends StatelessWidget {
                 child: Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
               ),
             ),
-            Image.asset(_horizontalAsset, height: imageHeight, fit: BoxFit.contain),
+            tinted(isDefaultTint ? null : color),
           ],
         ),
       );

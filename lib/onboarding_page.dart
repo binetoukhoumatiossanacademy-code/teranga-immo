@@ -125,6 +125,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       child: TerangaLogo(
                         variant: TerangaLogoVariant.stacked,
                         markSize: wide ? 160 : 110,
+                        color: _onPhotoText,
                       ),
                     ),
                     const Spacer(),
