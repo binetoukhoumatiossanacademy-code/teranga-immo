@@ -84,9 +84,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 constraints: BoxConstraints(maxWidth: wide ? 480 : double.infinity),
                 child: Column(
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: TerangaSpacing.xxl),
-                      child: TerangaLogo(variant: TerangaLogoVariant.stacked),
+                    Padding(
+                      padding: const EdgeInsets.only(top: TerangaSpacing.xxl),
+                      child: TerangaLogo(
+                        variant: TerangaLogoVariant.stacked,
+                        markSize: wide ? 120 : 84,
+                      ),
                     ),
                     Expanded(
                       child: PageView.builder(
@@ -178,26 +181,41 @@ class _SlideView extends StatelessWidget {
   final _Slide slide;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.xl),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(text: '${slide.title}\n', style: TerangaTypography.heroTitle),
-              TextSpan(text: slide.titleItalic, style: TerangaTypography.heroTitleItalic),
-            ],
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final titleSize = TerangaTypography.scaled(40, width);
+    final bodySize = TerangaTypography.scaled(17, width);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '${slide.title}\n',
+                  style: TerangaTypography.heroTitle.copyWith(fontSize: titleSize),
+                ),
+                TextSpan(
+                  text: slide.titleItalic,
+                  style: TerangaTypography.heroTitleItalic.copyWith(fontSize: titleSize),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: TerangaSpacing.md),
-        Text(
-          slide.description,
-          style: TerangaTypography.body.copyWith(color: Colors.black),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: TerangaSpacing.md),
+          Text(
+            slide.description,
+            style: TerangaTypography.body.copyWith(
+              color: Colors.black,
+              fontSize: bodySize,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
