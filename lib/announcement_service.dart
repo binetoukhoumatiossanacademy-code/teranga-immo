@@ -1,3 +1,6 @@
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/account_role.dart';
@@ -37,6 +40,17 @@ abstract class AnnouncementGateway {
     required String contactName,
     required String phoneWhatsApp,
     String? email,
+  });
+
+  /// Téléverse une photo (bucket Storage `annonces-photos`) et l'attache à
+  /// la version de travail, à l'ordre [order] (0 à 9). Au plus une photo par
+  /// version peut être [principal].
+  Future<void> uploadPhoto({
+    required AnnouncementWorkflowId announcementId,
+    required Uint8List bytes,
+    required String mimeType,
+    required int order,
+    required bool principal,
   });
 
   /// Soumet la version de travail au contrôle Teranga Immo. Le serveur
@@ -84,14 +98,9 @@ class SupabaseAnnouncementGateway implements AnnouncementGateway {
     return AnnouncementWorkflowId.fromJson(workflowId);
   }
 
-  @override
-  Future<void> setContact({
-    required AnnouncementWorkflowId announcementId,
-    required AccountRole accountRole,
-    required String contactName,
-    required String phoneWhatsApp,
-    String? email,
-  }) async {
+  Future<String> _workingVersionId(
+    AnnouncementWorkflowId announcementId,
+  ) async {
     final annonce = await client
         .schema('public')
         .from('annonces')
@@ -102,6 +111,18 @@ class SupabaseAnnouncementGateway implements AnnouncementGateway {
     if (versionId == null) {
       throw StateError('Aucune version de travail pour cette annonce');
     }
+    return versionId;
+  }
+
+  @override
+  Future<void> setContact({
+    required AnnouncementWorkflowId announcementId,
+    required AccountRole accountRole,
+    required String contactName,
+    required String phoneWhatsApp,
+    String? email,
+  }) async {
+    final versionId = await _workingVersionId(announcementId);
     await client.schema('public').from('contacts_annonces').insert({
       'version_id': versionId,
       'annonce_id': announcementId.value,
@@ -112,6 +133,59 @@ class SupabaseAnnouncementGateway implements AnnouncementGateway {
       'appel_autorise': true,
       'whatsapp_autorise': true,
     });
+  }
+
+  @override
+  Future<void> uploadPhoto({
+    required AnnouncementWorkflowId announcementId,
+    required Uint8List bytes,
+    required String mimeType,
+    required int order,
+    required bool principal,
+  }) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Connexion requise');
+    final versionId = await _workingVersionId(announcementId);
+    final extension = switch (mimeType) {
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      _ => 'jpg',
+    };
+    final storagePath =
+        '$userId/${announcementId.value}/${_randomToken()}.$extension';
+    await client.storage
+        .from('annonces-photos')
+        .uploadBinary(
+          storagePath,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType),
+        );
+    final photo = await client
+        .schema('public')
+        .from('photos_annonces')
+        .insert({
+          'annonce_id': announcementId.value,
+          'storage_path': storagePath,
+          'created_by': userId,
+          'mime_type': mimeType,
+          'taille_octets': bytes.length,
+        })
+        .select('id')
+        .single();
+    await client.schema('public').from('annonces_versions_photos').insert({
+      'version_id': versionId,
+      'photo_id': photo['id'],
+      'ordre': order,
+      'est_principale': principal,
+    });
+  }
+
+  static String _randomToken() {
+    final random = Random.secure();
+    return List.generate(
+      16,
+      (_) => random.nextInt(16).toRadixString(16),
+    ).join();
   }
 
   @override

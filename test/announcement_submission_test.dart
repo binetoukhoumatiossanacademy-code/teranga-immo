@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teranga_immo/account_service.dart';
@@ -58,6 +60,19 @@ class FakeAnnouncementGateway implements AnnouncementGateway {
   }) async {
     setContactCalls++;
     receivedContactRole = accountRole;
+  }
+
+  int uploadPhotoCalls = 0;
+
+  @override
+  Future<void> uploadPhoto({
+    required AnnouncementWorkflowId announcementId,
+    required Uint8List bytes,
+    required String mimeType,
+    required int order,
+    required bool principal,
+  }) async {
+    uploadPhotoCalls++;
   }
 
   @override

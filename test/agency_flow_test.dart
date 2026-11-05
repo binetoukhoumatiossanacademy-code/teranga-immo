@@ -68,7 +68,10 @@ void main() {
 
       await tapVisible(tester, find.text('Proposer un logement'));
       expect(find.text('Proposer un logement'), findsOneWidget);
-      expect(find.text('Ajout de photos indisponible'), findsOneWidget);
+      expect(
+        find.textContaining('Ajoutez jusqu’à 10 photos'),
+        findsOneWidget,
+      );
 
       await goToAgencySection(tester, 'Mes annonces');
       expect(find.text('Aucune annonce chargée'), findsOneWidget);

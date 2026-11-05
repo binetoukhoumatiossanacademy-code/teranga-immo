@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:image_picker/image_picker.dart';
 import 'account_page.dart';
 import 'account_service.dart';
 import 'announcement_service.dart';
@@ -7,6 +10,25 @@ import 'design_system/design_system.dart';
 import 'models/account_role.dart';
 import 'models/announcement.dart';
 import 'tenant_widgets.dart';
+
+class _PickedPhoto {
+  _PickedPhoto({required this.bytes, required this.mimeType});
+  final Uint8List bytes;
+  final String mimeType;
+}
+
+String? _mimeTypeFor(XFile file, String? reported) {
+  if (reported == 'image/jpeg' ||
+      reported == 'image/png' ||
+      reported == 'image/webp') {
+    return reported;
+  }
+  final name = file.name.toLowerCase();
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.webp')) return 'image/webp';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  return null;
+}
 
 /// Parcours visuel propriétaire. La publication d'une annonce (brouillon,
 /// contact, envoi au contrôle) est raccordée à Supabase via
@@ -56,6 +78,8 @@ class _OwnerFlowState extends State<OwnerFlow> {
   int bedrooms = 1;
   bool furnished = false;
   DateTime? availableFrom;
+  final photos = <_PickedPhoto>[];
+  int? principalPhotoIndex;
   AnnouncementWorkflowId? lastDraftId;
   bool lastSubmitted = false;
   String? lastRefusalReason;
@@ -285,6 +309,15 @@ class _OwnerFlowState extends State<OwnerFlow> {
         phoneWhatsApp: phone,
         email: widget.account!.user!.email,
       );
+      for (var i = 0; i < photos.length; i++) {
+        await gateway.uploadPhoto(
+          announcementId: id,
+          bytes: photos[i].bytes,
+          mimeType: photos[i].mimeType,
+          order: i,
+          principal: i == principalPhotoIndex,
+        );
+      }
       var submitted = false;
       String? refusal;
       try {
@@ -738,51 +771,149 @@ class _OwnerFlowState extends State<OwnerFlow> {
       ],
     ),
   );
-  Widget photoSlots() => Padding(
+  Future<void> pickPhotos() async {
+    if (photos.length >= 10) return;
+    List<XFile> picked;
+    try {
+      picked = await ImagePicker().pickMultiImage(limit: 10 - photos.length);
+    } catch (_) {
+      if (mounted) {
+        setState(() => message = 'Impossible d’accéder à vos photos.');
+      }
+      return;
+    }
+    var rejected = false;
+    for (final file in picked) {
+      if (photos.length >= 10) break;
+      final bytes = await file.readAsBytes();
+      final mimeType = _mimeTypeFor(file, file.mimeType);
+      if (mimeType == null || bytes.length > 8388608) {
+        rejected = true;
+        continue;
+      }
+      photos.add(_PickedPhoto(bytes: bytes, mimeType: mimeType));
+    }
+    if (!mounted) return;
+    setState(() {
+      principalPhotoIndex ??= photos.isEmpty ? null : 0;
+      message = rejected
+          ? 'Certaines photos ont été ignorées (JPEG, PNG ou WebP, 8 Mo maximum).'
+          : message;
+    });
+  }
+
+  void removePhoto(int index) {
+    setState(() {
+      photos.removeAt(index);
+      if (photos.isEmpty) {
+        principalPhotoIndex = null;
+      } else if (principalPhotoIndex == index) {
+        principalPhotoIndex = 0;
+      } else if (principalPhotoIndex != null && principalPhotoIndex! > index) {
+        principalPhotoIndex = principalPhotoIndex! - 1;
+      }
+    });
+  }
+
+  Widget photoPicker({bool editable = true}) => Padding(
     padding: const EdgeInsets.only(bottom: TerangaSpacing.md),
-    child: Row(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < 3; i++)
-          Expanded(
-            child: Container(
-              height: 62,
-              margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
-              decoration: BoxDecoration(
-                color: TerangaColors.beige,
-                border: Border.all(color: TerangaColors.border),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (var i = 0; i < photos.length; i++)
+              SizedBox(
+                width: 72,
+                height: 72,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(TerangaRadius.field),
+                      child: Image.memory(
+                        photos[i].bytes,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    if (editable && i != principalPhotoIndex)
+                      Positioned.fill(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(
+                              TerangaRadius.field,
+                            ),
+                            onTap: () =>
+                                setState(() => principalPhotoIndex = i),
+                          ),
+                        ),
+                      ),
+                    if (i == principalPhotoIndex)
+                      const Positioned(
+                        left: 4,
+                        top: 4,
+                        child: Icon(
+                          LucideIcons.star,
+                          size: 16,
+                          color: TerangaColors.gold,
+                        ),
+                      ),
+                    if (editable)
+                      Positioned(
+                        right: 2,
+                        top: 2,
+                        child: GestureDetector(
+                          onTap: () => removePhoto(i),
+                          child: const CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.black54,
+                            child: Icon(
+                              LucideIcons.x,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            if (editable && photos.length < 10)
+              InkWell(
+                onTap: pickPhotos,
                 borderRadius: BorderRadius.circular(TerangaRadius.field),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: TerangaColors.beige,
+                    border: Border.all(color: TerangaColors.border),
+                    borderRadius: BorderRadius.circular(TerangaRadius.field),
+                  ),
+                  child: const Icon(
+                    LucideIcons.image_plus,
+                    color: TerangaColors.gold,
+                  ),
+                ),
               ),
-              child: const Icon(
-                LucideIcons.image,
-                color: TerangaColors.lightBrown,
-              ),
-            ),
-          ),
+          ],
+        ),
+        const SizedBox(height: TerangaSpacing.xs),
+        Text(
+          editable
+              ? (photos.isEmpty
+                    ? 'Ajoutez jusqu’à 10 photos (JPEG, PNG ou WebP, 8 Mo max). Touchez une photo pour la définir comme principale.'
+                    : '${photos.length} photo(s) · touchez une photo pour la définir comme principale.')
+              : (photos.isEmpty
+                    ? 'Aucune photo ajoutée.'
+                    : '${photos.length} photo(s) ajoutée(s).'),
+          style: TerangaTypography.meta,
+        ),
       ],
-    ),
-  );
-  Widget photos() => Container(
-    height: 135,
-    margin: const EdgeInsets.symmetric(vertical: TerangaSpacing.md),
-    decoration: BoxDecoration(
-      color: TerangaColors.white,
-      border: Border.all(color: TerangaColors.border),
-      borderRadius: BorderRadius.circular(TerangaRadius.card),
-    ),
-    child: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            LucideIcons.image_plus,
-            size: 32,
-            color: TerangaColors.gold,
-          ),
-          const SizedBox(height: TerangaSpacing.sm),
-          Text('Photos du logement', style: TerangaTypography.body),
-          Text('Ajout de photos indisponible', style: TerangaTypography.meta),
-        ],
-      ),
     ),
   );
   Widget chips<T>(
@@ -825,8 +956,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
         responsiveSections(
           [
             section(LucideIcons.camera, 'Photos du logement'),
-            photos(),
-            photoSlots(),
+            photoPicker(),
             section(LucideIcons.map_pin, 'Où se trouve le logement ?'),
             input('region', 'Région'),
             input('city', 'Ville'),
@@ -925,7 +1055,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
           style: TerangaTypography.body,
         ),
         responsiveSections(
-          [photos(), photoSlots()],
+          [photoPicker(editable: false)],
           [
             title('${fields['rent']!.text} FCFA / mois'),
             Text(
