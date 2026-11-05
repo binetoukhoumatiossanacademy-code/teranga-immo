@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:teranga_immo/account_service.dart';
+import 'package:teranga_immo/announcement_service.dart';
+import 'package:teranga_immo/models/account_role.dart';
+import 'package:teranga_immo/models/announcement.dart';
+import 'package:teranga_immo/owner_flow.dart';
+import 'account_test.dart' show FakeAccountGateway, testUser, profile;
+
+Future<void> tap(WidgetTester tester, String text) async {
+  await tester.pumpAndSettle();
+  final target = find.textContaining(text).last;
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+Future<void> enter(WidgetTester tester, String key, String text) async {
+  final target = find.byKey(ValueKey('owner-$key'));
+  await tester.ensureVisible(target);
+  await tester.enterText(target, text);
+  await tester.pump();
+}
+
+class FakeAnnouncementGateway implements AnnouncementGateway {
+  bool failSubmit = false;
+  String refusalMessage = 'L’annonce doit contenir entre 1 et 10 photos';
+  int createDraftCalls = 0, setContactCalls = 0, submitCalls = 0;
+  AccountRole? receivedContactRole;
+
+  @override
+  Future<AnnouncementWorkflowId> createDraft({
+    String? region,
+    required String city,
+    required String district,
+    required HousingType housingType,
+    required int monthlyRent,
+    required int bedroomCount,
+    required bool furnished,
+    required String description,
+    required AvailabilityMode availabilityMode,
+    DateTime? availableFrom,
+  }) async {
+    createDraftCalls++;
+    return AnnouncementWorkflowId.fromJson(
+      '11111111-1111-4111-8111-111111111111',
+    );
+  }
+
+  @override
+  Future<void> setContact({
+    required AnnouncementWorkflowId announcementId,
+    required AccountRole accountRole,
+    required String contactName,
+    required String phoneWhatsApp,
+    String? email,
+  }) async {
+    setContactCalls++;
+    receivedContactRole = accountRole;
+  }
+
+  @override
+  Future<void> submit(AnnouncementWorkflowId announcementId) async {
+    submitCalls++;
+    if (failSubmit) throw AnnouncementSubmissionRefused(refusalMessage);
+  }
+}
+
+Future<void> fillDraft(WidgetTester tester) async {
+  await tap(tester, 'Proposer un logement');
+  await enter(tester, 'region', 'Dakar');
+  await enter(tester, 'city', 'Dakar');
+  await enter(tester, 'district', 'Mermoz');
+  await enter(tester, 'rent', '150000');
+  await enter(tester, 'description', 'Appartement lumineux proche de la mer');
+  await tap(tester, 'Continuer');
+  expect(find.text('Vérifiez votre annonce'), findsOneWidget);
+}
+
+void main() {
+  testWidgets('Envoi réussi : brouillon, contact et soumission au contrôle', (
+    tester,
+  ) async {
+    final gateway = FakeAccountGateway()
+      ..user = testUser
+      ..stored = profile(phoneWhatsApp: '+221770000000');
+    final account = AccountController(gateway);
+    addTearDown(account.dispose);
+    addTearDown(gateway.events.close);
+    await account.refreshProfile();
+    final announcements = FakeAnnouncementGateway();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OwnerFlow(
+          account: account,
+          announcements: announcements,
+          onAgency: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await fillDraft(tester);
+    await tap(tester, 'Envoyer à Teranga Immo');
+    expect(announcements.createDraftCalls, 1);
+    expect(announcements.setContactCalls, 1);
+    expect(announcements.receivedContactRole, AccountRole.proprietaire);
+    expect(announcements.submitCalls, 1);
+    expect(find.text('Annonce envoyée au contrôle'), findsOneWidget);
+    expect(
+      find.text('Votre annonce est en attente de contrôle par Teranga Immo.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'Envoi refusé par le serveur : brouillon conservé, motif affiché',
+    (tester) async {
+      final gateway = FakeAccountGateway()
+        ..user = testUser
+        ..stored = profile(phoneWhatsApp: '+221770000000');
+      final account = AccountController(gateway);
+      addTearDown(account.dispose);
+      addTearDown(gateway.events.close);
+      await account.refreshProfile();
+      final announcements = FakeAnnouncementGateway()..failSubmit = true;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OwnerFlow(
+            account: account,
+            announcements: announcements,
+            onAgency: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await fillDraft(tester);
+      await tap(tester, 'Envoyer à Teranga Immo');
+      expect(announcements.createDraftCalls, 1);
+      expect(announcements.setContactCalls, 1);
+      expect(find.text('Brouillon enregistré'), findsOneWidget);
+      expect(find.textContaining(announcements.refusalMessage), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Téléphone manquant : aucun appel réseau, message local affiché',
+    (tester) async {
+      final gateway = FakeAccountGateway()
+        ..user = testUser
+        ..stored = profile(phoneWhatsApp: null);
+      final account = AccountController(gateway);
+      addTearDown(account.dispose);
+      addTearDown(gateway.events.close);
+      await account.refreshProfile();
+      final announcements = FakeAnnouncementGateway();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OwnerFlow(
+            account: account,
+            announcements: announcements,
+            onAgency: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await fillDraft(tester);
+      await tap(tester, 'Envoyer à Teranga Immo');
+      expect(announcements.createDraftCalls, 0);
+      expect(
+        find.textContaining('numéro de téléphone/WhatsApp'),
+        findsOneWidget,
+      );
+    },
+  );
+}

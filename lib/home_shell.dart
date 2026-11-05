@@ -3,6 +3,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import 'account_page.dart';
 import 'account_service.dart';
+import 'announcement_service.dart';
 import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
 import 'detail_page.dart';
@@ -21,11 +22,13 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     this.repository,
+    this.announcements,
     this.configurationError,
     this.account,
   });
   final AccountController? account;
   final AnnoncesRepository? repository;
+  final AnnouncementGateway? announcements;
   final String? configurationError;
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -218,6 +221,7 @@ class _HomeShellState extends State<HomeShell> {
     if (ownerFlowActive) {
       return OwnerFlow(
         account: widget.account,
+        announcements: widget.announcements,
         onAgency: () => setState(() {
           ownerFlowActive = false;
           agencyFlowActive = true;
@@ -229,6 +233,7 @@ class _HomeShellState extends State<HomeShell> {
     if (agencyFlowActive) {
       return AgencyFlow(
         account: widget.account,
+        announcements: widget.announcements,
         onOwner: () => setState(() {
           agencyFlowActive = false;
           ownerFlowActive = true;
@@ -296,7 +301,9 @@ class _HomeShellState extends State<HomeShell> {
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: page == 0 ? double.infinity : 1120),
+                constraints: BoxConstraints(
+                  maxWidth: page == 0 ? double.infinity : 1120,
+                ),
                 child: SingleChildScrollView(
                   padding: EdgeInsets.all(page == 0 ? 0 : 20),
                   child: pages[page],
@@ -310,9 +317,18 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: page,
         onDestinationSelected: (value) => setState(() => page = value),
         destinations: const [
-          NavigationDestination(icon: Icon(LucideIcons.house), label: 'Accueil'),
-          NavigationDestination(icon: Icon(LucideIcons.search), label: 'Rechercher'),
-          NavigationDestination(icon: Icon(LucideIcons.heart), label: 'Favoris'),
+          NavigationDestination(
+            icon: Icon(LucideIcons.house),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.search),
+            label: 'Rechercher',
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.heart),
+            label: 'Favoris',
+          ),
           NavigationDestination(icon: Icon(LucideIcons.plus), label: 'Publier'),
           NavigationDestination(icon: Icon(LucideIcons.user), label: 'Profil'),
         ],

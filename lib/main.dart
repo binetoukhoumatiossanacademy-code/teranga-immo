@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'account_service.dart';
+import 'announcement_service.dart';
 import 'annonces_repository.dart';
 import 'app_config.dart';
 import 'teranga_app.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
     runApp(
       TerangaApp(
         repository: SupabaseAnnoncesRepository(Supabase.instance.client),
+        announcements: SupabaseAnnouncementGateway(Supabase.instance.client),
         account: AccountController(
           SupabaseAccountGateway(
             Supabase.instance.client,
