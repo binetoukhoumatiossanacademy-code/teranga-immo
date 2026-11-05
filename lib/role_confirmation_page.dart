@@ -58,7 +58,7 @@ class RoleConfirmationPage extends StatelessWidget {
                       const Spacer(),
                       const TerangaLogo(
                         variant: TerangaLogoVariant.stacked,
-                        markSize: 28,
+                        markSize: 46,
                       ),
                       const Spacer(),
                       const SizedBox(width: 48),
