@@ -38,7 +38,7 @@ class RoleConfirmationPage extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: wide ? 480 : double.infinity),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                 TerangaSpacing.xl,
                 TerangaSpacing.md,
@@ -72,7 +72,9 @@ class RoleConfirmationPage extends StatelessWidget {
                   Text(
                     'Parfait\u00a0!',
                     textAlign: TextAlign.center,
-                    style: TerangaTypography.sectionTitle.copyWith(fontSize: 28),
+                    style: TerangaTypography.sectionTitle.copyWith(
+                      fontSize: 28,
+                    ),
                   ),
                   const SizedBox(height: TerangaSpacing.sm),
                   Text(
@@ -84,12 +86,16 @@ class RoleConfirmationPage extends StatelessWidget {
                   Text(
                     _subtitles[role]!,
                     textAlign: TextAlign.center,
-                    style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
+                    style: TerangaTypography.body.copyWith(
+                      color: TerangaColors.taupe,
+                    ),
                   ),
                   const SizedBox(height: TerangaSpacing.giant),
                   FilledButton(
                     onPressed: onContinue,
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
                     child: const Text('Continuer  →'),
                   ),
                 ],
