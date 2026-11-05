@@ -32,7 +32,7 @@ class SupabaseAnnoncesRepository implements AnnoncesRepository {
         .schema('public')
         .from('annonces')
         .select(
-          'id,created_at,type_logement,ville,quartier,loyer_mensuel,statut',
+          'id,created_at,type_logement,ville,quartier,loyer_mensuel,statut,workflow_id',
         )
         .eq('statut', 'approuvee');
     if (filters.city.trim().isNotEmpty) {

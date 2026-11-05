@@ -5,6 +5,7 @@ import 'account_service.dart';
 import 'announcement_service.dart';
 import 'annonces_repository.dart';
 import 'app_config.dart';
+import 'favorites_service.dart';
 import 'teranga_app.dart';
 
 export 'detail_page.dart' show DetailPage;
@@ -45,6 +46,7 @@ Future<void> main() async {
       TerangaApp(
         repository: SupabaseAnnoncesRepository(Supabase.instance.client),
         announcements: SupabaseAnnouncementGateway(Supabase.instance.client),
+        favorites: SupabaseFavoritesGateway(Supabase.instance.client),
         account: AccountController(
           SupabaseAccountGateway(
             Supabase.instance.client,

@@ -12,9 +12,11 @@ class TenantDetail extends StatefulWidget {
     required this.favorite,
     required this.onBack,
     required this.onFavorite,
+    this.favoritesPersisted = false,
   });
   final Home home;
   final bool favorite;
+  final bool favoritesPersisted;
   final VoidCallback onBack, onFavorite;
   @override
   State<TenantDetail> createState() => _TenantDetailState();
@@ -85,11 +87,15 @@ class _TenantDetailState extends State<TenantDetail> {
                       ),
                       decoration: BoxDecoration(
                         color: TerangaColors.scrimOnPhoto,
-                        borderRadius: BorderRadius.circular(TerangaRadius.badge + 10),
+                        borderRadius: BorderRadius.circular(
+                          TerangaRadius.badge + 10,
+                        ),
                       ),
                       child: Text(
                         '${photo + 1}/${tenantDemoPhotos.length}',
-                        style: TerangaTypography.meta.copyWith(color: TerangaColors.white),
+                        style: TerangaTypography.meta.copyWith(
+                          color: TerangaColors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -119,7 +125,9 @@ class _TenantDetailState extends State<TenantDetail> {
                                         : Colors.transparent,
                                     width: 2,
                                   ),
-                                  borderRadius: BorderRadius.circular(TerangaRadius.card + 2),
+                                  borderRadius: BorderRadius.circular(
+                                    TerangaRadius.card + 2,
+                                  ),
                                 ),
                                 child: TenantPhoto(
                                   home: home,
@@ -139,15 +147,27 @@ class _TenantDetailState extends State<TenantDetail> {
             const SizedBox(height: TerangaSpacing.lg),
             Text(
               home.monthlyPrice,
-              style: TerangaTypography.priceDisplay.copyWith(color: TerangaColors.gold),
+              style: TerangaTypography.priceDisplay.copyWith(
+                color: TerangaColors.gold,
+              ),
             ),
-            Text(home.location, style: TerangaTypography.cardTitle.copyWith(fontSize: 19)),
+            Text(
+              home.location,
+              style: TerangaTypography.cardTitle.copyWith(fontSize: 19),
+            ),
             const SizedBox(height: TerangaSpacing.sm),
             Row(
               children: [
-                const Icon(LucideIcons.building_complex, size: 16, color: TerangaColors.lightBrown),
+                const Icon(
+                  LucideIcons.building_complex,
+                  size: 16,
+                  color: TerangaColors.lightBrown,
+                ),
                 const SizedBox(width: 6),
-                Text('${home.type} · ${home.roomsLabel}', style: TerangaTypography.body),
+                Text(
+                  '${home.type} · ${home.roomsLabel}',
+                  style: TerangaTypography.body,
+                ),
               ],
             ),
             Text(
@@ -156,11 +176,20 @@ class _TenantDetailState extends State<TenantDetail> {
             ),
             const SizedBox(height: TerangaSpacing.sm),
             const TenantNotice('Disponibilité non renseignée.'),
-            const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
-            Text('À propos de ce logement', style: TerangaTypography.sectionTitle.copyWith(fontSize: 20)),
+            const Divider(
+              height: TerangaSpacing.xxl,
+              color: TerangaColors.border,
+            ),
+            Text(
+              'À propos de ce logement',
+              style: TerangaTypography.sectionTitle.copyWith(fontSize: 20),
+            ),
             const SizedBox(height: TerangaSpacing.sm),
             Text(home.description, style: TerangaTypography.body),
-            const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
+            const Divider(
+              height: TerangaSpacing.xxl,
+              color: TerangaColors.border,
+            ),
             Container(
               padding: const EdgeInsets.all(TerangaSpacing.md),
               decoration: BoxDecoration(
@@ -170,9 +199,15 @@ class _TenantDetailState extends State<TenantDetail> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Niveau de contrôle Teranga Immo', style: TerangaTypography.cardTitle),
+                  Text(
+                    'Niveau de contrôle Teranga Immo',
+                    style: TerangaTypography.cardTitle,
+                  ),
                   const SizedBox(height: TerangaSpacing.sm),
-                  Text('Niveau de contrôle non renseigné', style: TerangaTypography.meta),
+                  Text(
+                    'Niveau de contrôle non renseigné',
+                    style: TerangaTypography.meta,
+                  ),
                   TextButton(
                     onPressed: () => showTenantControlInfo(context),
                     child: const Text('Voir ce qui a été contrôlé →'),
@@ -180,8 +215,14 @@ class _TenantDetailState extends State<TenantDetail> {
                 ],
               ),
             ),
-            const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
-            Text('Annonce publiée par', style: TerangaTypography.sectionTitle.copyWith(fontSize: 19)),
+            const Divider(
+              height: TerangaSpacing.xxl,
+              color: TerangaColors.border,
+            ),
+            Text(
+              'Annonce publiée par',
+              style: TerangaTypography.sectionTitle.copyWith(fontSize: 19),
+            ),
             const SizedBox(height: TerangaSpacing.md),
             Row(
               children: [
@@ -191,7 +232,10 @@ class _TenantDetailState extends State<TenantDetail> {
                 ),
                 const SizedBox(width: TerangaSpacing.md),
                 Expanded(
-                  child: Text('Annonceur non renseigné', style: TerangaTypography.bodyStrong),
+                  child: Text(
+                    'Annonceur non renseigné',
+                    style: TerangaTypography.bodyStrong,
+                  ),
                 ),
               ],
             ),
@@ -211,10 +255,15 @@ class _TenantDetailState extends State<TenantDetail> {
             ),
             const SizedBox(height: TerangaSpacing.sm),
             Text(
-              'Favoris conservés uniquement pour cette session, sans sauvegarde de compte.',
+              widget.favoritesPersisted
+                  ? 'Favori enregistré sur votre compte.'
+                  : 'Favoris conservés uniquement pour cette session, sans sauvegarde de compte.',
               style: TerangaTypography.meta,
             ),
-            const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
+            const Divider(
+              height: TerangaSpacing.xxl,
+              color: TerangaColors.border,
+            ),
             const TextButton(
               onPressed: null,
               child: Text('⚑ Signaler un problème avec cette annonce'),

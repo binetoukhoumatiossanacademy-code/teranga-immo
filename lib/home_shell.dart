@@ -6,6 +6,7 @@ import 'account_service.dart';
 import 'announcement_service.dart';
 import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
+import 'favorites_service.dart';
 import 'detail_page.dart';
 import 'home.dart';
 import 'models/account_role.dart';
@@ -23,12 +24,14 @@ class HomeShell extends StatefulWidget {
     super.key,
     this.repository,
     this.announcements,
+    this.favorites,
     this.configurationError,
     this.account,
   });
   final AccountController? account;
   final AnnoncesRepository? repository;
   final AnnouncementGateway? announcements;
+  final FavoritesGateway? favorites;
   final String? configurationError;
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -214,6 +217,7 @@ class _HomeShellState extends State<HomeShell> {
     if (tenantFlowActive) {
       return TenantFlow(
         repository: widget.repository,
+        favorites: widget.favorites,
         configurationError: widget.configurationError,
         account: widget.account,
       );

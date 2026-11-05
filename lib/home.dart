@@ -6,6 +6,7 @@ class Home {
   final int? rooms;
   final Color color;
   final String? id;
+  final String? workflowId;
   final String city;
   final bool isDemo;
   const Home(
@@ -18,6 +19,7 @@ class Home {
     this.description,
     this.color, {
     this.id,
+    this.workflowId,
     this.city = 'Dakar',
     this.isDemo = true,
   });
@@ -62,6 +64,7 @@ class Home {
       'Description non renseignée.',
       const Color(0xFFEAF2E9),
       id: row['id']?.toString(),
+      workflowId: row['workflow_id']?.toString(),
       city: city,
       isDemo: false,
     );

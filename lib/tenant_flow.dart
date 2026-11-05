@@ -5,6 +5,7 @@ import 'account_page.dart';
 import 'account_service.dart';
 import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
+import 'favorites_service.dart';
 import 'home.dart';
 import 'models/account_role.dart';
 import 'tenant_detail.dart';
@@ -17,10 +18,12 @@ class TenantFlow extends StatefulWidget {
   const TenantFlow({
     super.key,
     this.repository,
+    this.favorites,
     this.configurationError,
     this.account,
   });
   final AnnoncesRepository? repository;
+  final FavoritesGateway? favorites;
   final String? configurationError;
   final AccountController? account;
   @override
@@ -41,14 +44,49 @@ class _TenantFlowState extends State<TenantFlow> {
   List<Home> results = [];
   Home? selectedHome;
   bool loading = false;
-  String? error, rentError;
+  String? error, rentError, favoritesError;
   int requestId = 0;
   Map<String, String> appliedLabels = {};
+  String? _favoritesLoadedForUserId;
   bool get connected =>
       widget.repository != null || widget.configurationError != null;
+  bool get canPersistFavorites =>
+      widget.favorites != null && widget.account?.user != null;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.account?.addListener(_onAccountChanged);
+    _favoritesLoadedForUserId = widget.account?.user?.id;
+    if (_favoritesLoadedForUserId != null) loadFavorites();
+  }
+
+  void _onAccountChanged() {
+    final id = widget.account?.user?.id;
+    if (id != _favoritesLoadedForUserId) {
+      _favoritesLoadedForUserId = id;
+      if (id != null) loadFavorites();
+    }
+  }
+
+  Future<void> loadFavorites() async {
+    if (!canPersistFavorites) return;
+    try {
+      final homes = await widget.favorites!.listHomes();
+      if (!mounted) return;
+      setState(() {
+        favorites
+          ..clear()
+          ..addEntries(homes.map((home) => MapEntry(keyFor(home), home)));
+      });
+    } catch (_) {
+      // Les favoris resteront vides jusqu’au prochain chargement réussi.
+    }
+  }
 
   @override
   void dispose() {
+    widget.account?.removeListener(_onAccountChanged);
     requestId++;
     keyword.dispose();
     city.dispose();
@@ -66,14 +104,34 @@ class _TenantFlowState extends State<TenantFlow> {
 
   String keyFor(Home home) =>
       home.id ?? '${home.title}|${home.city}|${home.district}|${home.rent}';
-  void toggleFavorite(Home home) => setState(() {
+  void toggleFavorite(Home home) {
     final key = keyFor(home);
-    if (favorites.containsKey(key)) {
-      favorites.remove(key);
-    } else {
-      favorites[key] = home;
-    }
-  });
+    final adding = !favorites.containsKey(key);
+    setState(() {
+      favoritesError = null;
+      if (adding) {
+        favorites[key] = home;
+      } else {
+        favorites.remove(key);
+      }
+    });
+    if (!canPersistFavorites || home.workflowId == null) return;
+    final gateway = widget.favorites!;
+    final pending = adding
+        ? gateway.add(home.workflowId!)
+        : gateway.remove(home.workflowId!);
+    pending.catchError((_) {
+      if (!mounted) return;
+      setState(() {
+        if (adding) {
+          favorites.remove(key);
+        } else {
+          favorites[key] = home;
+        }
+        favoritesError = 'Impossible de mettre à jour vos favoris. Réessayez.';
+      });
+    });
+  }
 
   void open(Home home) {
     detailOrigin = screen;
@@ -202,6 +260,8 @@ class _TenantFlowState extends State<TenantFlow> {
       TenantScreen.detail => TenantDetail(
         home: selectedHome!,
         favorite: favorites.containsKey(keyFor(selectedHome!)),
+        favoritesPersisted:
+            canPersistFavorites && selectedHome!.workflowId != null,
         onBack: () => go(detailOrigin),
         onFavorite: () => toggleFavorite(selectedHome!),
       ),
@@ -339,7 +399,10 @@ class _TenantFlowState extends State<TenantFlow> {
     style: TerangaTypography.sectionTitle.copyWith(fontSize: size),
   );
   Widget label(String text) => Padding(
-    padding: const EdgeInsets.only(top: TerangaSpacing.sm, bottom: TerangaSpacing.xs),
+    padding: const EdgeInsets.only(
+      top: TerangaSpacing.sm,
+      bottom: TerangaSpacing.xs,
+    ),
     child: Text(
       text,
       style: TerangaTypography.meta.copyWith(
@@ -369,7 +432,9 @@ class _TenantFlowState extends State<TenantFlow> {
               children: [
                 Icon(icon, size: 20, color: TerangaColors.gold),
                 const SizedBox(width: TerangaSpacing.sm),
-                Expanded(child: Text(title, style: TerangaTypography.cardTitle)),
+                Expanded(
+                  child: Text(title, style: TerangaTypography.cardTitle),
+                ),
               ],
             ),
             ...children,
@@ -406,7 +471,10 @@ class _TenantFlowState extends State<TenantFlow> {
             'Recherche par mots-clés dans les informations disponibles. Les phrases ne sont pas converties automatiquement en critères.',
             style: TerangaTypography.meta,
           ),
-          const Divider(height: TerangaSpacing.xxl, color: TerangaColors.border),
+          const Divider(
+            height: TerangaSpacing.xxl,
+            color: TerangaColors.border,
+          ),
           heading('Ou précisez vos critères', size: 20),
           const SizedBox(height: TerangaSpacing.xs),
           Text(
@@ -643,10 +711,7 @@ class _TenantFlowState extends State<TenantFlow> {
         if (widget.repository != null)
           TextButton(onPressed: search, child: const Text('Réessayer')),
       ] else ...[
-        Text(
-          '${results.length} résultat(s)',
-          style: TerangaTypography.meta,
-        ),
+        Text('${results.length} résultat(s)', style: TerangaTypography.meta),
         const SizedBox(height: TerangaSpacing.sm),
         if (results.isEmpty) ...[
           const TenantNotice(
@@ -685,9 +750,15 @@ class _TenantFlowState extends State<TenantFlow> {
     children: [
       heading('Mes favoris'),
       const SizedBox(height: TerangaSpacing.sm),
-      const TenantNotice(
-        'Favoris de cette session uniquement. Aucune sauvegarde dans un compte ou dans Supabase.',
+      TenantNotice(
+        canPersistFavorites
+            ? 'Vos favoris sont enregistrés sur votre compte et vous suivent sur tous vos appareils.'
+            : 'Favoris de cette session uniquement. Connectez-vous pour les retrouver sur tous vos appareils.',
       ),
+      if (favoritesError != null) ...[
+        const SizedBox(height: TerangaSpacing.sm),
+        TenantNotice(favoritesError!, warning: true),
+      ],
       const SizedBox(height: TerangaSpacing.md),
       Text(
         'Touchez un logement pour le consulter.',

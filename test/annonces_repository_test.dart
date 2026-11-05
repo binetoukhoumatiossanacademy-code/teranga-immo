@@ -22,7 +22,7 @@ void main() {
       expect(request.url.queryParameters['limit'], '100');
       expect(
         request.url.queryParameters['select'],
-        'id,created_at,type_logement,ville,quartier,loyer_mensuel,statut',
+        'id,created_at,type_logement,ville,quartier,loyer_mensuel,statut,workflow_id',
       );
       return http.Response(
         jsonEncode([
