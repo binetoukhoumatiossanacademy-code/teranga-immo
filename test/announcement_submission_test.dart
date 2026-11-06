@@ -96,6 +96,33 @@ class FakeAnnouncementGateway implements AnnouncementGateway {
   }) async {
     withdrawCalls++;
   }
+
+  int startCorrectionCalls = 0;
+  int updateDraftCalls = 0;
+  String correctionVersionId = '33333333-3333-4333-8333-333333333333';
+
+  @override
+  Future<String> startCorrection(AnnouncementWorkflowId announcementId) async {
+    startCorrectionCalls++;
+    return correctionVersionId;
+  }
+
+  @override
+  Future<void> updateDraft({
+    required String versionId,
+    String? region,
+    required String city,
+    required String district,
+    required HousingType housingType,
+    required int monthlyRent,
+    required int bedroomCount,
+    required bool furnished,
+    required String description,
+    required AvailabilityMode availabilityMode,
+    DateTime? availableFrom,
+  }) async {
+    updateDraftCalls++;
+  }
 }
 
 Announcement fixtureAnnouncement({required String status}) =>
@@ -103,6 +130,7 @@ Announcement fixtureAnnouncement({required String status}) =>
       'id': 1,
       'workflow_id': '11111111-1111-4111-8111-111111111111',
       'statut': status,
+      'region': 'Dakar',
       'ville': 'Dakar',
       'quartier': 'Mermoz',
       'type_logement': 'Appartement',
@@ -286,6 +314,54 @@ void main() {
       await tap(tester, 'Confirmer');
       expect(announcements.withdrawCalls, 1);
       expect(find.textContaining('transmise à Teranga Immo'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Correction : renvoi au contrôle met à jour la version existante',
+    (tester) async {
+      final gateway = FakeAccountGateway()
+        ..user = testUser
+        ..stored = profile(phoneWhatsApp: '+221770000000');
+      final account = AccountController(gateway);
+      addTearDown(account.dispose);
+      addTearDown(gateway.events.close);
+      await account.refreshProfile();
+      final announcements = FakeAnnouncementGateway()
+        ..mine = [fixtureAnnouncement(status: 'correction_demandee')];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OwnerFlow(
+            account: account,
+            announcements: announcements,
+            onAgency: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tap(tester, 'Mes annonces');
+      await tap(tester, 'Appartement');
+      expect(find.text('Correction demandée'), findsOneWidget);
+      await tap(tester, 'Corriger mon annonce');
+      expect(find.text('Corriger mon annonce'), findsOneWidget);
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const ValueKey('owner-city')))
+            .controller!
+            .text,
+        'Dakar',
+      );
+      await enter(tester, 'description', 'Description corrigée après refus');
+      await tap(tester, 'Continuer');
+      expect(find.text('Vérifiez votre correction'), findsOneWidget);
+      await tap(tester, 'Renvoyer au contrôle');
+      expect(announcements.startCorrectionCalls, 1);
+      expect(announcements.updateDraftCalls, 1);
+      expect(announcements.submitCalls, 1);
+      expect(announcements.createDraftCalls, 0);
+      expect(announcements.setContactCalls, 0);
+      expect(announcements.uploadPhotoCalls, 0);
+      expect(find.text('Annonce envoyée au contrôle'), findsOneWidget);
     },
   );
 }

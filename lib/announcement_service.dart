@@ -66,6 +66,27 @@ abstract class AnnouncementGateway {
     required String reason,
     required bool rentedOut,
   });
+
+  /// Ouvre une nouvelle version de travail à partir de la version publiée,
+  /// pour corriger une annonce dont la publication a été refusée ou dont la
+  /// correction a été demandée. Retourne l'identifiant de cette version.
+  Future<String> startCorrection(AnnouncementWorkflowId announcementId);
+
+  /// Met à jour les informations du logement sur une version de travail
+  /// déjà ouverte (brouillon ou correction en cours).
+  Future<void> updateDraft({
+    required String versionId,
+    String? region,
+    required String city,
+    required String district,
+    required HousingType housingType,
+    required int monthlyRent,
+    required int bedroomCount,
+    required bool furnished,
+    required String description,
+    required AvailabilityMode availabilityMode,
+    DateTime? availableFrom,
+  });
 }
 
 class SupabaseAnnouncementGateway implements AnnouncementGateway {
@@ -248,5 +269,51 @@ class SupabaseAnnouncementGateway implements AnnouncementGateway {
             'p_logement_loue': rentedOut,
           },
         );
+  }
+
+  @override
+  Future<String> startCorrection(AnnouncementWorkflowId announcementId) async {
+    final versionId = await client
+        .schema('public')
+        .rpc(
+          'commencer_modification_annonce',
+          params: {'p_annonce_id': announcementId.value},
+        );
+    return versionId as String;
+  }
+
+  @override
+  Future<void> updateDraft({
+    required String versionId,
+    String? region,
+    required String city,
+    required String district,
+    required HousingType housingType,
+    required int monthlyRent,
+    required int bedroomCount,
+    required bool furnished,
+    required String description,
+    required AvailabilityMode availabilityMode,
+    DateTime? availableFrom,
+  }) async {
+    await client
+        .schema('public')
+        .from('annonces_versions')
+        .update({
+          'region': region,
+          'ville': city,
+          'quartier': district,
+          'type_logement': housingType.databaseValue,
+          'loyer_mensuel': monthlyRent,
+          'nombre_chambres': bedroomCount,
+          'est_meuble': furnished,
+          'description': description,
+          'mode_disponibilite': availabilityMode.databaseValue,
+          'disponible_a_partir': availableFrom
+              ?.toIso8601String()
+              .split('T')
+              .first,
+        })
+        .eq('id', versionId);
   }
 }

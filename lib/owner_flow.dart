@@ -91,6 +91,9 @@ class _OwnerFlowState extends State<OwnerFlow> {
   bool withdrawing = false;
   String? withdrawMessage;
   bool withdrawSuccess = false;
+  AnnouncementWorkflowId? correctionAnnouncementId;
+  String? correctionVersionId;
+  bool get isCorrecting => correctionAnnouncementId != null;
   bool get authenticated => widget.account?.user != null;
   bool get agency => widget.role == AccountRole.agence;
   // L'accès au profil dépend du rôle confirmé par le serveur, jamais du choix visuel.
@@ -131,8 +134,12 @@ class _OwnerFlowState extends State<OwnerFlow> {
     super.dispose();
   }
 
-  void go(String value) {
+  void go(String value, {bool keepDraftContext = false}) {
     FocusManager.instance.primaryFocus?.unfocus();
+    if (value == 'draft' && !keepDraftContext) {
+      correctionAnnouncementId = null;
+      correctionVersionId = null;
+    }
     setState(() {
       screen = value;
       message = null;
@@ -158,6 +165,40 @@ class _OwnerFlowState extends State<OwnerFlow> {
         );
     } finally {
       if (mounted) setState(() => loadingAnnouncements = false);
+    }
+  }
+
+  Future<void> beginCorrection(Announcement announcement) async {
+    final gateway = widget.announcements;
+    if (gateway == null || busy) return;
+    setState(() {
+      busy = true;
+      message = null;
+    });
+    try {
+      final versionId = await gateway.startCorrection(announcement.workflowId);
+      fields['region']!.text = announcement.region ?? '';
+      fields['city']!.text = announcement.city ?? '';
+      fields['district']!.text = announcement.district ?? '';
+      fields['rent']!.text = announcement.monthlyRent?.toString() ?? '';
+      fields['description']!.text = announcement.description ?? '';
+      housingType = announcement.housingType ?? HousingType.appartement;
+      bedrooms = (announcement.bedroomCount ?? 1).clamp(1, 5);
+      furnished = announcement.furnished ?? false;
+      availability =
+          announcement.availabilityMode ?? AvailabilityMode.maintenant;
+      availableFrom = announcement.availableFrom;
+      correctionAnnouncementId = announcement.workflowId;
+      correctionVersionId = versionId;
+      if (mounted) go('draft', keepDraftContext: true);
+    } catch (_) {
+      if (mounted)
+        setState(
+          () => message =
+              'Impossible de préparer la correction. Vérifiez votre connexion et réessayez.',
+        );
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
@@ -371,9 +412,69 @@ class _OwnerFlowState extends State<OwnerFlow> {
     }
   }
 
+  Future<void> submitCorrection() async {
+    final gateway = widget.announcements!;
+    final announcementId = correctionAnnouncementId!;
+    final versionId = correctionVersionId!;
+    setState(() {
+      busy = true;
+      message = null;
+    });
+    try {
+      await gateway.updateDraft(
+        versionId: versionId,
+        region: fields['region']!.text.trim().isEmpty
+            ? null
+            : fields['region']!.text.trim(),
+        city: fields['city']!.text.trim(),
+        district: fields['district']!.text.trim(),
+        housingType: housingType,
+        monthlyRent: int.parse(fields['rent']!.text.trim()),
+        bedroomCount: bedrooms,
+        furnished: furnished,
+        description: fields['description']!.text.trim(),
+        availabilityMode: availability,
+        availableFrom: availability == AvailabilityMode.date
+            ? availableFrom
+            : null,
+      );
+      var submitted = false;
+      String? refusal;
+      try {
+        await gateway.submit(announcementId);
+        submitted = true;
+      } on AnnouncementSubmissionRefused catch (e) {
+        refusal = e.message;
+      }
+      myAnnouncements = null;
+      if (mounted) {
+        setState(() {
+          lastDraftId = announcementId;
+          lastSubmitted = submitted;
+          lastRefusalReason = refusal;
+          correctionAnnouncementId = null;
+          correctionVersionId = null;
+        });
+        go('confirmation');
+      }
+    } catch (_) {
+      if (mounted)
+        setState(
+          () => message =
+              'Impossible d’enregistrer la correction. Vérifiez votre connexion et réessayez.',
+        );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> submitAnnouncement() async {
     final gateway = widget.announcements;
     if (gateway == null || !owner || busy) return;
+    if (isCorrecting) {
+      await submitCorrection();
+      return;
+    }
     final phone = widget.account!.profile!.phoneWhatsApp?.trim();
     if (phone == null || phone.isEmpty) {
       setState(
@@ -1054,11 +1155,20 @@ class _OwnerFlowState extends State<OwnerFlow> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        title('Proposer un logement'),
+        title(isCorrecting ? 'Corriger mon annonce' : 'Proposer un logement'),
+        if (isCorrecting)
+          const Padding(
+            padding: EdgeInsets.only(bottom: TerangaSpacing.md),
+            child: TenantNotice(
+              'Les photos et le contact existants restent inchangés pour cette correction.',
+            ),
+          ),
         responsiveSections(
           [
-            section(LucideIcons.camera, 'Photos du logement'),
-            photoPicker(),
+            if (!isCorrecting) ...[
+              section(LucideIcons.camera, 'Photos du logement'),
+              photoPicker(),
+            ],
             section(LucideIcons.map_pin, 'Où se trouve le logement ?'),
             input('region', 'Région'),
             input('city', 'Ville'),
@@ -1151,13 +1261,15 @@ class _OwnerFlowState extends State<OwnerFlow> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        title('Vérifiez votre annonce'),
+        title(
+          isCorrecting ? 'Vérifiez votre correction' : 'Vérifiez votre annonce',
+        ),
         Text(
           'Vérifiez les informations avant de les envoyer à Teranga Immo.',
           style: TerangaTypography.body,
         ),
         responsiveSections(
-          [photoPicker(editable: false)],
+          [if (!isCorrecting) photoPicker(editable: false)],
           [
             title('${fields['rent']!.text} FCFA / mois'),
             Text(
@@ -1209,9 +1321,13 @@ class _OwnerFlowState extends State<OwnerFlow> {
               child: CircularProgressIndicator(color: TerangaColors.gold),
             ),
           ),
-        action('Modifier', () => go('draft'), secondary: true),
         action(
-          'Envoyer à Teranga Immo',
+          'Modifier',
+          () => go('draft', keepDraftContext: true),
+          secondary: true,
+        ),
+        action(
+          isCorrecting ? 'Renvoyer au contrôle' : 'Envoyer à Teranga Immo',
           canSubmit && !busy ? submitAnnouncement : null,
         ),
         TextButton(
@@ -1359,6 +1475,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
 
   Widget corrections() {
     final announcement = selectedAnnouncement;
+    final canCorrect = announcement != null && widget.announcements != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1379,15 +1496,27 @@ class _OwnerFlowState extends State<OwnerFlow> {
           style: TerangaTypography.cardTitle.copyWith(fontSize: 19),
         ),
         const SizedBox(height: TerangaSpacing.md),
-        const TenantNotice(
-          'La modification et le renvoi au contrôle depuis cet écran ne sont pas encore disponibles.',
-        ),
+        if (!canCorrect) TenantNotice(unavailable),
+        if (message != null) ...[
+          const SizedBox(height: TerangaSpacing.sm),
+          TenantNotice(message!, warning: true),
+        ],
+        if (busy)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: TerangaSpacing.sm),
+            child: Center(
+              child: CircularProgressIndicator(color: TerangaColors.gold),
+            ),
+          ),
         const SizedBox(height: TerangaSpacing.md),
         Text(
           'Après correction et nouvel envoi confirmé, votre annonce sera de nouveau soumise au contrôle de Teranga Immo.',
           style: TerangaTypography.body,
         ),
-        action('Corriger mon annonce', null),
+        action(
+          'Corriger mon annonce',
+          canCorrect && !busy ? () => beginCorrection(announcement) : null,
+        ),
         action('Retour à mes annonces', () => go('list'), secondary: true),
       ],
     );
