@@ -6,6 +6,7 @@ import 'package:teranga_immo/main.dart';
 import 'package:teranga_immo/annonces_repository.dart';
 import 'package:teranga_immo/account_service.dart';
 import 'package:teranga_immo/home.dart';
+import 'package:teranga_immo/models/announcement_contact.dart';
 import 'package:teranga_immo/design_system/design_system.dart';
 import 'account_test.dart' as account_test;
 
@@ -331,6 +332,10 @@ class TestAnnoncesRepository implements AnnoncesRepository {
   final Future<List<Home>> Function(AnnouncementFilters) fetch;
   @override
   Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
+  @override
+  Future<AnnouncementContact?> fetchContact(
+    String announcementWorkflowId,
+  ) async => null;
 }
 
 // Les contrôles historiques du catalogue public restent couverts par une

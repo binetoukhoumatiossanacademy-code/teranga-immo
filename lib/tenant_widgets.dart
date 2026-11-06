@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'design_system/design_system.dart';
 import 'home.dart';
+import 'models/announcement_contact.dart';
 
 const tenantDemoPhotos = [
   'assets/homes/tenant_reference_living.png',
@@ -54,7 +56,9 @@ class TenantNotice extends StatelessWidget {
       color: warning ? TerangaColors.warningSurface : TerangaColors.beige,
       borderRadius: BorderRadius.circular(TerangaRadius.field),
       border: Border.all(
-        color: warning ? TerangaColors.warning.withValues(alpha: 0.4) : TerangaColors.border,
+        color: warning
+            ? TerangaColors.warning.withValues(alpha: 0.4)
+            : TerangaColors.border,
       ),
     ),
     child: Row(
@@ -69,7 +73,9 @@ class TenantNotice extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TerangaTypography.meta.copyWith(color: TerangaColors.deepBrown),
+            style: TerangaTypography.meta.copyWith(
+              color: TerangaColors.deepBrown,
+            ),
           ),
         ),
       ],
@@ -112,10 +118,7 @@ class TenantPhoto extends StatelessWidget {
                   color: TerangaColors.lightBrown,
                 ),
                 const SizedBox(height: TerangaSpacing.sm),
-                Text(
-                  'Photo non renseignée',
-                  style: TerangaTypography.meta,
-                ),
+                Text('Photo non renseignée', style: TerangaTypography.meta),
               ],
             ),
           ),
@@ -165,7 +168,9 @@ class TenantListingCard extends StatelessWidget {
                       onPressed: onFavorite,
                       icon: Icon(
                         favorite ? LucideIcons.heart : LucideIcons.heart,
-                        color: favorite ? TerangaColors.gold : TerangaColors.deepBrown,
+                        color: favorite
+                            ? TerangaColors.gold
+                            : TerangaColors.deepBrown,
                       ),
                     ),
                   ),
@@ -173,7 +178,12 @@ class TenantListingCard extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(6, TerangaSpacing.sm, 6, TerangaSpacing.xs),
+              padding: const EdgeInsets.fromLTRB(
+                6,
+                TerangaSpacing.sm,
+                6,
+                TerangaSpacing.xs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -188,7 +198,11 @@ class TenantListingCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(LucideIcons.building_complex, size: 14, color: TerangaColors.lightBrown),
+                      const Icon(
+                        LucideIcons.building_complex,
+                        size: 14,
+                        color: TerangaColors.lightBrown,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${home.type} · ${home.roomsLabel}',
@@ -199,7 +213,11 @@ class TenantListingCard extends StatelessWidget {
                   const Divider(height: 18, color: TerangaColors.border),
                   Row(
                     children: [
-                      Icon(LucideIcons.circle, size: 12, color: TerangaColors.border),
+                      Icon(
+                        LucideIcons.circle,
+                        size: 12,
+                        color: TerangaColors.border,
+                      ),
                       const SizedBox(width: TerangaSpacing.sm),
                       Expanded(
                         child: Text(
@@ -238,9 +256,14 @@ ButtonStyle tenantPrimaryStyle() => FilledButton.styleFrom(
   backgroundColor: TerangaColors.gold,
   foregroundColor: TerangaColors.white,
   minimumSize: const Size.fromHeight(50),
-  padding: const EdgeInsets.symmetric(horizontal: TerangaSpacing.md, vertical: TerangaSpacing.md),
+  padding: const EdgeInsets.symmetric(
+    horizontal: TerangaSpacing.md,
+    vertical: TerangaSpacing.md,
+  ),
   textStyle: TerangaTypography.button,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(TerangaRadius.button)),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(TerangaRadius.button),
+  ),
 );
 
 Future<void> showTenantControlInfo(BuildContext context) => showDialog<void>(
@@ -260,10 +283,14 @@ Future<void> showTenantControlInfo(BuildContext context) => showDialog<void>(
   ),
 );
 
+String _waNumber(String phone) => phone.replaceAll(RegExp(r'[^0-9+]'), '');
+
 Future<void> showTenantContact(
-  BuildContext context,
-  Home home,
-) => showModalBottomSheet<void>(
+  BuildContext context, {
+  required Home home,
+  required AnnouncementContact? contact,
+  required bool authenticated,
+}) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
@@ -272,7 +299,9 @@ Future<void> showTenantContact(
     maxWidth: MediaQuery.sizeOf(context).width < 700 ? 440 : 720,
   ),
   shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(TerangaRadius.modal + 8)),
+    borderRadius: BorderRadius.vertical(
+      top: Radius.circular(TerangaRadius.modal + 8),
+    ),
   ),
   builder: (context) => SafeArea(
     child: SingleChildScrollView(
@@ -305,7 +334,7 @@ Future<void> showTenantContact(
                 const SizedBox(width: TerangaSpacing.md),
                 Expanded(
                   child: Text(
-                    'Annonceur non renseigné',
+                    contact?.name ?? 'Annonceur non renseigné',
                     style: TerangaTypography.bodyStrong,
                   ),
                 ),
@@ -315,16 +344,24 @@ Future<void> showTenantContact(
             TenantNotice(
               home.isDemo
                   ? 'Ce logement est fictif : aucun propriétaire ne peut être contacté.'
+                  : contact != null
+                  ? 'Coordonnées transmises par l’annonceur.'
+                  : !authenticated
+                  ? 'Connectez-vous pour voir les coordonnées de contact.'
                   : 'Coordonnées de contact non renseignées pour cette annonce.',
-              warning: true,
+              warning: contact == null,
             ),
             const SizedBox(height: TerangaSpacing.lg),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: OutlinedButton(
-                    onPressed: null,
-                    child: Row(
+                    onPressed: contact != null && contact.callAllowed
+                        ? () => launchUrl(
+                            Uri(scheme: 'tel', path: contact.phoneWhatsApp),
+                          )
+                        : null,
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(LucideIcons.phone, size: 18),
@@ -337,7 +374,13 @@ Future<void> showTenantContact(
                 const SizedBox(width: TerangaSpacing.sm),
                 Expanded(
                   child: FilledButton(
-                    onPressed: null,
+                    onPressed: contact != null && contact.whatsAppAllowed
+                        ? () => launchUrl(
+                            Uri.parse(
+                              'https://wa.me/${_waNumber(contact.phoneWhatsApp)}',
+                            ),
+                          )
+                        : null,
                     style: tenantPrimaryStyle(),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -353,7 +396,9 @@ Future<void> showTenantContact(
             ),
             const SizedBox(height: TerangaSpacing.md),
             Text(
-              'Les appels et WhatsApp seront accessibles lorsque des coordonnées réelles et autorisées seront disponibles.',
+              contact != null
+                  ? 'Appel et WhatsApp selon les autorisations données par l’annonceur.'
+                  : 'Les appels et WhatsApp seront accessibles lorsque des coordonnées réelles et autorisées seront disponibles.',
               style: TerangaTypography.meta,
             ),
           ],

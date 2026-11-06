@@ -262,6 +262,8 @@ class _TenantFlowState extends State<TenantFlow> {
         favorite: favorites.containsKey(keyFor(selectedHome!)),
         favoritesPersisted:
             canPersistFavorites && selectedHome!.workflowId != null,
+        repository: widget.repository,
+        authenticated: widget.account?.user != null,
         onBack: () => go(detailOrigin),
         onFavorite: () => toggleFavorite(selectedHome!),
       ),

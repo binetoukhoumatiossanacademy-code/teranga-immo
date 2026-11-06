@@ -1,8 +1,10 @@
 import 'responsive_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
 import 'home.dart';
+import 'models/announcement_contact.dart';
 import 'tenant_widgets.dart';
 
 class TenantDetail extends StatefulWidget {
@@ -13,10 +15,14 @@ class TenantDetail extends StatefulWidget {
     required this.onBack,
     required this.onFavorite,
     this.favoritesPersisted = false,
+    this.repository,
+    this.authenticated = false,
   });
   final Home home;
   final bool favorite;
   final bool favoritesPersisted;
+  final AnnoncesRepository? repository;
+  final bool authenticated;
   final VoidCallback onBack, onFavorite;
   @override
   State<TenantDetail> createState() => _TenantDetailState();
@@ -24,6 +30,29 @@ class TenantDetail extends StatefulWidget {
 
 class _TenantDetailState extends State<TenantDetail> {
   int photo = 0;
+  AnnouncementContact? contact;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContact();
+  }
+
+  Future<void> _loadContact() async {
+    final workflowId = widget.home.workflowId;
+    final repository = widget.repository;
+    if (workflowId == null || repository == null || !widget.authenticated) {
+      return;
+    }
+    try {
+      final result = await repository.fetchContact(workflowId);
+      if (mounted) setState(() => contact = result);
+    } catch (_) {
+      // Le bouton « Contacter » reste disponible et affiche l’absence de
+      // coordonnées ; aucune erreur bloquante n’est nécessaire ici.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final home = widget.home;
@@ -233,7 +262,7 @@ class _TenantDetailState extends State<TenantDetail> {
                 const SizedBox(width: TerangaSpacing.md),
                 Expanded(
                   child: Text(
-                    'Annonceur non renseigné',
+                    contact?.name ?? 'Annonceur non renseigné',
                     style: TerangaTypography.bodyStrong,
                   ),
                 ),
@@ -241,7 +270,12 @@ class _TenantDetailState extends State<TenantDetail> {
             ),
             const SizedBox(height: TerangaSpacing.lg),
             FilledButton(
-              onPressed: () => showTenantContact(context, home),
+              onPressed: () => showTenantContact(
+                context,
+                home: home,
+                contact: contact,
+                authenticated: widget.authenticated,
+              ),
               style: tenantPrimaryStyle(),
               child: const Text('Contacter →'),
             ),

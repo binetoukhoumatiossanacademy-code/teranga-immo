@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home.dart';
+import 'models/announcement_contact.dart';
 
 class AnnouncementFilters {
   const AnnouncementFilters({
@@ -14,6 +15,11 @@ class AnnouncementFilters {
 
 abstract class AnnoncesRepository {
   Future<List<Home>> search(AnnouncementFilters filters);
+
+  /// Le contact (propriétaire ou agence) d'une annonce publiée. La RLS
+  /// Supabase réserve cette information aux locataires connectés : un
+  /// visiteur non authentifié reçoit toujours `null`, sans appel réseau.
+  Future<AnnouncementContact?> fetchContact(String announcementWorkflowId);
 }
 
 class SupabaseAnnoncesRepository implements AnnoncesRepository {
@@ -55,5 +61,24 @@ class SupabaseAnnoncesRepository implements AnnoncesRepository {
         .where((row) => row['statut'] == 'approuvee')
         .map(Home.fromAnnouncement)
         .toList();
+  }
+
+  @override
+  Future<AnnouncementContact?> fetchContact(
+    String announcementWorkflowId,
+  ) async {
+    if (client.auth.currentUser == null) return null;
+    final rows = await client
+        .schema('public')
+        .from('contacts_annonces')
+        .select(
+          'version_id,annonce_id,nom_contact,type_contact,'
+          'telephone_whatsapp,email_contact,appel_autorise,'
+          'whatsapp_autorise,updated_at',
+        )
+        .eq('annonce_id', announcementWorkflowId)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return AnnouncementContact.fromJson(rows.first);
   }
 }

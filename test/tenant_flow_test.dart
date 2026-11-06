@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teranga_immo/annonces_repository.dart';
 import 'package:teranga_immo/home.dart';
+import 'package:teranga_immo/models/announcement_contact.dart';
 import 'package:teranga_immo/teranga_app.dart';
 
 class TenantTestRepository implements AnnoncesRepository {
@@ -11,6 +12,10 @@ class TenantTestRepository implements AnnoncesRepository {
   final Future<List<Home>> Function(AnnouncementFilters) fetch;
   @override
   Future<List<Home>> search(AnnouncementFilters filters) => fetch(filters);
+  @override
+  Future<AnnouncementContact?> fetchContact(
+    String announcementWorkflowId,
+  ) async => null;
 }
 
 Future<void> tapTenant(WidgetTester tester, Finder finder) async {
