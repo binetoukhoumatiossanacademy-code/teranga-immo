@@ -129,27 +129,6 @@ void main() {
       expect(find.text('Annonce envoyée !'), findsNothing);
       await tap(tester, 'Voir mes annonces');
       expect(find.text('Aucune annonce chargée'), findsOneWidget);
-      await tap(tester, 'Correction demandée : état indisponible');
-      expect(find.text('Correction demandée'), findsOneWidget);
-      expect(
-        tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Corriger mon annonce'),
-            )
-            .onPressed,
-        isNull,
-      );
-      await tap(tester, 'Retour à mes annonces');
-      await tap(tester, 'Gérer mon annonce : état indisponible');
-      expect(find.text('Gérer mon annonce'), findsOneWidget);
-      expect(
-        tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Demander le retrait'),
-            )
-            .onPressed,
-        isNull,
-      );
       await tap(tester, 'Profil');
       expect(find.text('Mon profil'), findsOneWidget);
       expect(find.text('Aucun compte connecté'), findsOneWidget);

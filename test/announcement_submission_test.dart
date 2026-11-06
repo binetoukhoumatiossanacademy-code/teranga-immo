@@ -80,7 +80,39 @@ class FakeAnnouncementGateway implements AnnouncementGateway {
     submitCalls++;
     if (failSubmit) throw AnnouncementSubmissionRefused(refusalMessage);
   }
+
+  List<Announcement> mine = [];
+
+  @override
+  Future<List<Announcement>> listMine() async => mine;
+
+  int withdrawCalls = 0;
+
+  @override
+  Future<void> withdraw({
+    required AnnouncementWorkflowId announcementId,
+    required String reason,
+    required bool rentedOut,
+  }) async {
+    withdrawCalls++;
+  }
 }
+
+Announcement fixtureAnnouncement({required String status}) =>
+    Announcement.fromJson({
+      'id': 1,
+      'workflow_id': '11111111-1111-4111-8111-111111111111',
+      'statut': status,
+      'ville': 'Dakar',
+      'quartier': 'Mermoz',
+      'type_logement': 'Appartement',
+      'loyer_mensuel': 150000,
+      'niveau_controle': 'declaree',
+      'publication_autorisee': status == 'approuvee' || status == 'publiee',
+      'version_soumise': 1,
+      'premium_actif': false,
+      'updated_at': '2026-09-28T10:00:00Z',
+    });
 
 Future<void> fillDraft(WidgetTester tester) async {
   await tap(tester, 'Proposer un logement');
@@ -186,6 +218,74 @@ void main() {
         find.textContaining('numéro de téléphone/WhatsApp'),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets('Mes annonces affiche les annonces chargées depuis Supabase', (
+    tester,
+  ) async {
+    final gateway = FakeAccountGateway()
+      ..user = testUser
+      ..stored = profile(phoneWhatsApp: '+221770000000');
+    final account = AccountController(gateway);
+    addTearDown(account.dispose);
+    addTearDown(gateway.events.close);
+    await account.refreshProfile();
+    final announcements = FakeAnnouncementGateway()
+      ..mine = [
+        fixtureAnnouncement(status: 'en_attente_controle'),
+        fixtureAnnouncement(status: 'approuvee'),
+      ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OwnerFlow(
+          account: account,
+          announcements: announcements,
+          onAgency: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tap(tester, 'Mes annonces');
+    expect(find.text('Appartement'), findsNWidgets(2));
+    expect(find.textContaining('En attente de contrôle'), findsOneWidget);
+    expect(find.textContaining('Publiée'), findsOneWidget);
+  });
+
+  testWidgets(
+    'Demander le retrait appelle le serveur et affiche la confirmation',
+    (tester) async {
+      final gateway = FakeAccountGateway()
+        ..user = testUser
+        ..stored = profile(phoneWhatsApp: '+221770000000');
+      final account = AccountController(gateway);
+      addTearDown(account.dispose);
+      addTearDown(gateway.events.close);
+      await account.refreshProfile();
+      final announcements = FakeAnnouncementGateway()
+        ..mine = [fixtureAnnouncement(status: 'approuvee')];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OwnerFlow(
+            account: account,
+            announcements: announcements,
+            onAgency: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tap(tester, 'Mes annonces');
+      await tap(tester, 'Appartement');
+      expect(find.text('Gérer mon annonce'), findsOneWidget);
+      await tap(tester, 'Demander le retrait');
+      await tester.enterText(
+        find.byType(TextField),
+        'Le logement ne correspond plus à mon offre',
+      );
+      await tester.pumpAndSettle();
+      await tap(tester, 'Confirmer');
+      expect(announcements.withdrawCalls, 1);
+      expect(find.textContaining('transmise à Teranga Immo'), findsOneWidget);
     },
   );
 }

@@ -56,6 +56,16 @@ abstract class AnnouncementGateway {
   /// Soumet la version de travail au contrôle Teranga Immo. Le serveur
   /// refuse si le contact ou les photos obligatoires manquent.
   Future<void> submit(AnnouncementWorkflowId announcementId);
+
+  /// Les annonces (tous statuts confondus) de l'utilisateur connecté.
+  Future<List<Announcement>> listMine();
+
+  /// Demande le retrait d'une annonce publiée.
+  Future<void> withdraw({
+    required AnnouncementWorkflowId announcementId,
+    required String reason,
+    required bool rentedOut,
+  });
 }
 
 class SupabaseAnnouncementGateway implements AnnouncementGateway {
@@ -200,5 +210,43 @@ class SupabaseAnnouncementGateway implements AnnouncementGateway {
     } on PostgrestException catch (e) {
       throw AnnouncementSubmissionRefused(e.message);
     }
+  }
+
+  @override
+  Future<List<Announcement>> listMine() async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Connexion requise');
+    final rows = await client
+        .schema('public')
+        .from('annonces')
+        .select(
+          'id,workflow_id,annonceur_id,statut,region,ville,quartier,'
+          'type_logement,loyer_mensuel,nombre_chambres,est_meuble,description,'
+          'mode_disponibilite,disponible_a_partir,niveau_controle,'
+          'publication_autorisee,version_soumise,version_publiee_id,'
+          'version_travail_id,created_at,updated_at,derniere_soumission_at,'
+          'published_at,retired_at,premium_actif,premium_debut_at,premium_fin_at',
+        )
+        .eq('annonceur_id', userId)
+        .order('updated_at', ascending: false);
+    return rows.map(Announcement.fromJson).toList();
+  }
+
+  @override
+  Future<void> withdraw({
+    required AnnouncementWorkflowId announcementId,
+    required String reason,
+    required bool rentedOut,
+  }) async {
+    await client
+        .schema('public')
+        .rpc(
+          'demander_retrait_annonce',
+          params: {
+            'p_annonce_id': announcementId.value,
+            'p_motif': reason,
+            'p_logement_loue': rentedOut,
+          },
+        );
   }
 }

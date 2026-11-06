@@ -1,17 +1,18 @@
 enum AnnouncementStatus {
-  approuvee('approuvee'),
-  enAttenteLegacy('en_attente'),
-  brouillon('brouillon'),
-  enAttenteControle('en_attente_controle'),
-  correctionDemandee('correction_demandee'),
-  publiee('publiee'),
-  retraitDemande('retrait_demande'),
-  retiree('retiree'),
-  refusee('refusee');
+  approuvee('approuvee', 'Publiée'),
+  enAttenteLegacy('en_attente', 'En attente de contrôle'),
+  brouillon('brouillon', 'Brouillon'),
+  enAttenteControle('en_attente_controle', 'En attente de contrôle'),
+  correctionDemandee('correction_demandee', 'Correction demandée'),
+  publiee('publiee', 'Publiée'),
+  retraitDemande('retrait_demande', 'Retrait demandé'),
+  retiree('retiree', 'Retirée'),
+  refusee('refusee', 'Refusée');
 
-  const AnnouncementStatus(this.databaseValue);
+  const AnnouncementStatus(this.databaseValue, this.label);
 
   final String databaseValue;
+  final String label;
 
   bool get isPublicCompatible => switch (this) {
     AnnouncementStatus.approuvee ||

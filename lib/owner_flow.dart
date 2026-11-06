@@ -9,6 +9,7 @@ import 'announcement_service.dart';
 import 'design_system/design_system.dart';
 import 'models/account_role.dart';
 import 'models/announcement.dart';
+import 'models/announcement_status.dart';
 import 'tenant_widgets.dart';
 
 class _PickedPhoto {
@@ -83,6 +84,13 @@ class _OwnerFlowState extends State<OwnerFlow> {
   AnnouncementWorkflowId? lastDraftId;
   bool lastSubmitted = false;
   String? lastRefusalReason;
+  List<Announcement>? myAnnouncements;
+  bool loadingAnnouncements = false;
+  String? announcementsError;
+  Announcement? selectedAnnouncement;
+  bool withdrawing = false;
+  String? withdrawMessage;
+  bool withdrawSuccess = false;
   bool get authenticated => widget.account?.user != null;
   bool get agency => widget.role == AccountRole.agence;
   // L'accès au profil dépend du rôle confirmé par le serveur, jamais du choix visuel.
@@ -129,6 +137,99 @@ class _OwnerFlowState extends State<OwnerFlow> {
       screen = value;
       message = null;
     });
+    if (value == 'list' && myAnnouncements == null) loadMyAnnouncements();
+  }
+
+  Future<void> loadMyAnnouncements() async {
+    final gateway = widget.announcements;
+    if (gateway == null || !owner) return;
+    setState(() {
+      loadingAnnouncements = true;
+      announcementsError = null;
+    });
+    try {
+      final list = await gateway.listMine();
+      if (mounted) setState(() => myAnnouncements = list);
+    } catch (_) {
+      if (mounted)
+        setState(
+          () => announcementsError =
+              'Impossible de charger vos annonces. Vérifiez votre connexion et réessayez.',
+        );
+    } finally {
+      if (mounted) setState(() => loadingAnnouncements = false);
+    }
+  }
+
+  Future<void> requestWithdrawal(Announcement announcement) async {
+    final reasonController = TextEditingController();
+    var rentedOut = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Demander le retrait'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: reasonController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Motif du retrait',
+                ),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: rentedOut,
+                onChanged: (value) =>
+                    setDialogState(() => rentedOut = value ?? false),
+                title: const Text('Le logement a été loué'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Confirmer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || reasonController.text.trim().isEmpty) return;
+    setState(() {
+      withdrawing = true;
+      withdrawMessage = null;
+    });
+    try {
+      await widget.announcements!.withdraw(
+        announcementId: announcement.workflowId,
+        reason: reasonController.text.trim(),
+        rentedOut: rentedOut,
+      );
+      myAnnouncements = null;
+      if (mounted)
+        setState(() {
+          withdrawSuccess = true;
+          withdrawMessage =
+              'Votre demande de retrait a été transmise à Teranga Immo.';
+        });
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          withdrawSuccess = false;
+          withdrawMessage =
+              'Impossible d’enregistrer votre demande. Vérifiez votre connexion et réessayez.';
+        });
+    } finally {
+      if (mounted) setState(() => withdrawing = false);
+    }
   }
 
   bool get desktop => MediaQuery.sizeOf(context).width >= 900;
@@ -326,6 +427,7 @@ class _OwnerFlowState extends State<OwnerFlow> {
       } on AnnouncementSubmissionRefused catch (e) {
         refusal = e.message;
       }
+      myAnnouncements = null;
       if (mounted) {
         setState(() {
           lastDraftId = id;
@@ -1158,84 +1260,188 @@ class _OwnerFlowState extends State<OwnerFlow> {
     );
   }
 
-  Widget listings() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      title('Mes annonces'),
-      responsiveSections(
-        [
-          Text('Suivez et gérez vos logements.', style: TerangaTypography.body),
-          action('Proposer un logement', () => go('draft')),
-        ],
-        [
-          const SizedBox(height: TerangaSpacing.lg),
-          const Icon(
-            LucideIcons.building_complex,
-            size: 56,
-            color: TerangaColors.gold,
-          ),
-          const SizedBox(height: TerangaSpacing.md),
+  Widget announcementTile(Announcement announcement) {
+    final location = [
+      announcement.district,
+      announcement.city,
+    ].where((part) => part != null && part.isNotEmpty).join(', ');
+    final rent = announcement.monthlyRent;
+    return Card(
+      margin: const EdgeInsets.only(bottom: TerangaSpacing.sm),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(TerangaSpacing.md),
+        title: Text(
+          announcement.housingType?.databaseValue ?? 'Logement',
+          style: TerangaTypography.cardTitle,
+        ),
+        subtitle: Text(
+          [
+            if (location.isNotEmpty) location,
+            if (rent != null) '$rent FCFA/mois',
+            announcement.status?.label ?? '',
+          ].where((part) => part.isNotEmpty).join(' · '),
+          style: TerangaTypography.meta,
+        ),
+        trailing: const Icon(
+          LucideIcons.chevron_right,
+          color: TerangaColors.gold,
+        ),
+        onTap: () {
+          selectedAnnouncement = announcement;
+          go(
+            announcement.status == AnnouncementStatus.correctionDemandee
+                ? 'corrections'
+                : 'manage',
+          );
+        },
+      ),
+    );
+  }
+
+  Widget listings() {
+    final canLoad = widget.announcements != null && owner;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        title('Mes annonces'),
+        responsiveSections(
+          [
+            Text(
+              'Suivez et gérez vos logements.',
+              style: TerangaTypography.body,
+            ),
+            action('Proposer un logement', () => go('draft')),
+          ],
+          [
+            const SizedBox(height: TerangaSpacing.lg),
+            if (!canLoad) ...[
+              const Icon(
+                LucideIcons.building_complex,
+                size: 56,
+                color: TerangaColors.gold,
+              ),
+              const SizedBox(height: TerangaSpacing.md),
+              Text(
+                'Aucune annonce chargée',
+                textAlign: TextAlign.center,
+                style: TerangaTypography.body,
+              ),
+              const SizedBox(height: TerangaSpacing.lg),
+              TenantNotice(unavailable),
+            ] else if (loadingAnnouncements)
+              const Center(
+                child: CircularProgressIndicator(color: TerangaColors.gold),
+              )
+            else if (announcementsError != null) ...[
+              TenantNotice(announcementsError!, warning: true),
+              const SizedBox(height: TerangaSpacing.sm),
+              action('Réessayer', loadMyAnnouncements, secondary: true),
+            ] else if ((myAnnouncements ?? const []).isEmpty) ...[
+              const Icon(
+                LucideIcons.building_complex,
+                size: 56,
+                color: TerangaColors.gold,
+              ),
+              const SizedBox(height: TerangaSpacing.md),
+              Text(
+                'Aucune annonce pour le moment',
+                textAlign: TextAlign.center,
+                style: TerangaTypography.body,
+              ),
+            ] else
+              for (final announcement in myAnnouncements!)
+                announcementTile(announcement),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget corrections() {
+    final announcement = selectedAnnouncement;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        title('Correction demandée'),
+        if (announcement == null)
+          const TenantNotice(
+            'Aucune demande de correction de l’administration n’a été chargée.',
+            warning: true,
+          )
+        else
           Text(
-            'Aucune annonce chargée',
-            textAlign: TextAlign.center,
+            '${announcement.district ?? ''}, ${announcement.city ?? ''}',
             style: TerangaTypography.body,
           ),
-          const SizedBox(height: TerangaSpacing.lg),
-          TenantNotice(unavailable),
-          action(
-            'Correction demandée : état indisponible',
-            () => go('corrections'),
-            secondary: true,
+        const SizedBox(height: TerangaSpacing.lg),
+        Text(
+          'À corriger',
+          style: TerangaTypography.cardTitle.copyWith(fontSize: 19),
+        ),
+        const SizedBox(height: TerangaSpacing.md),
+        const TenantNotice(
+          'La modification et le renvoi au contrôle depuis cet écran ne sont pas encore disponibles.',
+        ),
+        const SizedBox(height: TerangaSpacing.md),
+        Text(
+          'Après correction et nouvel envoi confirmé, votre annonce sera de nouveau soumise au contrôle de Teranga Immo.',
+          style: TerangaTypography.body,
+        ),
+        action('Corriger mon annonce', null),
+        action('Retour à mes annonces', () => go('list'), secondary: true),
+      ],
+    );
+  }
+
+  Widget manage() {
+    final announcement = selectedAnnouncement;
+    final canWithdraw =
+        announcement != null &&
+        widget.announcements != null &&
+        (announcement.status == AnnouncementStatus.approuvee ||
+            announcement.status == AnnouncementStatus.publiee);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        title('Gérer mon annonce'),
+        if (announcement == null)
+          const TenantNotice(
+            'Sélectionnez une annonce chargée depuis le serveur pour consulter son état.',
+          )
+        else ...[
+          Text(
+            '${announcement.district ?? ''}, ${announcement.city ?? ''}',
+            style: TerangaTypography.cardTitle,
           ),
-          action(
-            'Gérer mon annonce : état indisponible',
-            () => go('manage'),
-            secondary: true,
-          ),
+          Text(announcement.status?.label ?? '', style: TerangaTypography.body),
         ],
-      ),
-    ],
-  );
-  Widget corrections() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      title('Correction demandée'),
-      const TenantNotice(
-        'Aucune demande de correction de l’administration n’a été chargée.',
-        warning: true,
-      ),
-      const SizedBox(height: TerangaSpacing.lg),
-      Text(
-        'À corriger',
-        style: TerangaTypography.cardTitle.copyWith(fontSize: 19),
-      ),
-      const SizedBox(height: TerangaSpacing.md),
-      TenantNotice(unavailable),
-      const SizedBox(height: TerangaSpacing.md),
-      Text(
-        'Après correction et nouvel envoi confirmé, votre annonce sera de nouveau soumise au contrôle de Teranga Immo.',
-        style: TerangaTypography.body,
-      ),
-      action('Corriger mon annonce', null),
-      action('Retour à mes annonces', () => go('list'), secondary: true),
-    ],
-  );
-  Widget manage() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      title('Gérer mon annonce'),
-      const TenantNotice(
-        'Sélectionnez une annonce chargée depuis le serveur pour consulter son état.',
-      ),
-      const SizedBox(height: TerangaSpacing.lg),
-      Text(
-        'La publication et le retrait restent soumis à l’administration. Aucune annonce ne peut être publiée ou retirée depuis cet écran sans confirmation du serveur.',
-        style: TerangaTypography.body,
-      ),
-      action('Demander le retrait', null),
-      action('Retour à mes annonces', () => go('list'), secondary: true),
-    ],
-  );
+        const SizedBox(height: TerangaSpacing.lg),
+        Text(
+          'La publication reste soumise à l’administration. Le retrait peut être demandé depuis cet écran pour une annonce publiée.',
+          style: TerangaTypography.body,
+        ),
+        if (withdrawMessage != null) ...[
+          const SizedBox(height: TerangaSpacing.md),
+          TenantNotice(withdrawMessage!, warning: !withdrawSuccess),
+        ],
+        if (withdrawing)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: TerangaSpacing.sm),
+            child: Center(
+              child: CircularProgressIndicator(color: TerangaColors.gold),
+            ),
+          ),
+        action(
+          'Demander le retrait',
+          canWithdraw && !withdrawing
+              ? () => requestWithdrawal(announcement)
+              : null,
+        ),
+        action('Retour à mes annonces', () => go('list'), secondary: true),
+      ],
+    );
+  }
+
   Widget profile() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
