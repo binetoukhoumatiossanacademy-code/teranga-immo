@@ -3,6 +3,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import 'account_page.dart';
 import 'account_service.dart';
+import 'admin_flow.dart';
 import 'announcement_service.dart';
 import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
@@ -10,6 +11,7 @@ import 'favorites_service.dart';
 import 'detail_page.dart';
 import 'home.dart';
 import 'models/account_role.dart';
+import 'moderation_service.dart';
 import 'welcome_page.dart';
 import 'tenant_flow.dart';
 import 'owner_flow.dart';
@@ -25,6 +27,7 @@ class HomeShell extends StatefulWidget {
     this.repository,
     this.announcements,
     this.favorites,
+    this.moderation,
     this.configurationError,
     this.account,
   });
@@ -32,6 +35,7 @@ class HomeShell extends StatefulWidget {
   final AnnoncesRepository? repository;
   final AnnouncementGateway? announcements;
   final FavoritesGateway? favorites;
+  final ModerationGateway? moderation;
   final String? configurationError;
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -80,7 +84,8 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void accountChanged() {
-    if (mounted && widget.account?.recovering == true) {
+    if (!mounted) return;
+    if (widget.account?.recovering == true) {
       setState(() {
         onboardingSeen = true;
         confirmingRole = false;
@@ -90,6 +95,11 @@ class _HomeShellState extends State<HomeShell> {
         agencyFlowActive = false;
         page = 4;
       });
+    } else if (widget.account?.profile?.role == AccountRole.admin) {
+      // Un compte administrateur peut se connecter depuis n'importe quel
+      // parcours (propriétaire, agence, locataire) : dès que son profil
+      // réel est chargé, l'écran se redessine pour router vers AdminFlow.
+      setState(() {});
     }
   }
 
@@ -188,6 +198,9 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.account?.profile?.role == AccountRole.admin) {
+      return AdminFlow(account: widget.account!, moderation: widget.moderation);
+    }
     if (!onboardingSeen) {
       return OnboardingPage(
         onGetStarted: () => setState(() => onboardingSeen = true),

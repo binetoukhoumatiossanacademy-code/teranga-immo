@@ -74,16 +74,24 @@ class _WelcomePageState extends State<WelcomePage> {
                   const SizedBox(height: TerangaSpacing.xl),
                   const _StepProgress(step: 1, of: 3),
                   const SizedBox(height: TerangaSpacing.lg),
-                  const Text('VOUS ÊTES\u202f?', style: TerangaTypography.eyebrow),
+                  const Text(
+                    'VOUS ÊTES\u202f?',
+                    style: TerangaTypography.eyebrow,
+                  ),
                   const SizedBox(height: TerangaSpacing.sm),
-                  Text('Choisissez votre profil', style: TerangaTypography.sectionTitle),
+                  Text(
+                    'Choisissez votre profil',
+                    style: TerangaTypography.sectionTitle,
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     'Cela nous permettra de vous proposer une expérience adaptée à vos besoins.',
-                    style: TerangaTypography.body.copyWith(color: TerangaColors.taupe),
+                    style: TerangaTypography.body.copyWith(
+                      color: TerangaColors.taupe,
+                    ),
                   ),
                   const SizedBox(height: TerangaSpacing.xl),
-                  for (final role in AccountRole.values) ...[
+                  for (final role in AccountRole.selectable) ...[
                     _ProfileCard(
                       role: role,
                       description: _descriptions[role]!,
@@ -91,20 +99,26 @@ class _WelcomePageState extends State<WelcomePage> {
                       selected: selected == role,
                       onTap: () => setState(() => selected = role),
                     ),
-                    if (role != AccountRole.values.last)
+                    if (role != AccountRole.selectable.last)
                       const SizedBox(height: TerangaSpacing.md),
                   ],
                   const SizedBox(height: TerangaSpacing.xl),
                   FilledButton(
                     onPressed: () => widget.onContinue(selected),
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
                     child: const Text('Continuer  →'),
                   ),
                   const SizedBox(height: TerangaSpacing.lg),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(LucideIcons.shield_check, size: 18, color: TerangaColors.taupe),
+                      Icon(
+                        LucideIcons.shield_check,
+                        size: 18,
+                        color: TerangaColors.taupe,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -203,10 +217,7 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Text(role.label, style: TerangaTypography.cardTitle),
                     const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: TerangaTypography.meta,
-                    ),
+                    Text(description, style: TerangaTypography.meta),
                   ],
                 ),
               ),
@@ -223,7 +234,11 @@ class _ProfileCard extends StatelessWidget {
                   ),
                 ),
                 child: selected
-                    ? const Icon(LucideIcons.check, size: 15, color: TerangaColors.white)
+                    ? const Icon(
+                        LucideIcons.check,
+                        size: 15,
+                        color: TerangaColors.white,
+                      )
                     : null,
               ),
             ],

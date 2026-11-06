@@ -7,6 +7,7 @@ import 'annonces_repository.dart';
 import 'design_system/design_system.dart';
 import 'favorites_service.dart';
 import 'home_shell.dart';
+import 'moderation_service.dart';
 
 class TerangaApp extends StatelessWidget {
   const TerangaApp({
@@ -14,6 +15,7 @@ class TerangaApp extends StatelessWidget {
     this.repository,
     this.announcements,
     this.favorites,
+    this.moderation,
     this.configurationError,
     this.account,
   });
@@ -21,6 +23,7 @@ class TerangaApp extends StatelessWidget {
   final AnnoncesRepository? repository;
   final AnnouncementGateway? announcements;
   final FavoritesGateway? favorites;
+  final ModerationGateway? moderation;
   final String? configurationError;
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -35,6 +38,7 @@ class TerangaApp extends StatelessWidget {
       repository: repository,
       announcements: announcements,
       favorites: favorites,
+      moderation: moderation,
       configurationError: configurationError,
     ),
   );

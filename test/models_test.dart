@@ -32,17 +32,22 @@ Map<String, dynamic> announcementJson({
 
 void main() {
   group('rôles et profil', () {
-    test('les trois rôles publics correspondent au schéma Supabase', () {
-      expect(AccountRole.values.map((role) => role.databaseValue), [
-        'locataire',
-        'proprietaire',
-        'agence',
-      ]);
-      expect(
-        () => AccountRole.fromDatabase('admin'),
-        throwsA(isA<FormatException>()),
-      );
-    });
+    test(
+      'les trois rôles choisissables par l’utilisateur correspondent au schéma Supabase',
+      () {
+        expect(AccountRole.selectable.map((role) => role.databaseValue), [
+          'locataire',
+          'proprietaire',
+          'agence',
+        ]);
+        expect(AccountRole.fromDatabase('admin'), AccountRole.admin);
+        expect(AccountRole.selectable, isNot(contains(AccountRole.admin)));
+        expect(
+          () => AccountRole.fromDatabase('super_admin'),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
 
     test('un profil agence conserve ses champs Supabase', () {
       final profile = UserProfile.fromJson({

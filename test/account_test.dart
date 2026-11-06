@@ -282,7 +282,7 @@ void main() {
           .map((item) => item.value)
           .whereType<AccountRole>()
           .toSet(),
-      AccountRole.values.toSet(),
+      AccountRole.selectable.toSet(),
     );
     expect(find.text('Administrateur'), findsNothing);
     await tester.tap(find.text('Locataire').last);

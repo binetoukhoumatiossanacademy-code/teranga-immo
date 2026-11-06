@@ -65,7 +65,11 @@ class _AccountPageState extends State<AccountPage> {
           metadataRoleError = null;
         } else {
           try {
-            role = AccountRole.fromDatabase(metadataRole);
+            final parsedRole = AccountRole.fromDatabase(metadataRole);
+            if (!AccountRole.selectable.contains(parsedRole)) {
+              throw const FormatException('Rôle non auto-attribuable');
+            }
+            role = parsedRole;
             metadataRoleError = null;
           } on FormatException {
             metadataRoleError =
@@ -195,7 +199,7 @@ class _AccountPageState extends State<AccountPage> {
           labelText: 'Type de compte',
           helperText: roleLocked ? 'Le rôle ne peut plus être modifié.' : null,
         ),
-        items: AccountRole.values
+        items: AccountRole.selectable
             .map(
               (value) =>
                   DropdownMenuItem(value: value, child: Text(value.label)),
