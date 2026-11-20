@@ -43,6 +43,24 @@ class FakeModerationGateway implements ModerationGateway {
     withdrawalDecisions.add(approve);
     withdrawals = withdrawals.where((item) => item.id != requestId).toList();
   }
+
+  List<PublishedAnnouncement> published = [];
+  String? lastControlLevel;
+  List<ControlElementInput>? lastControlElements;
+
+  @override
+  Future<List<PublishedAnnouncement>> listPublished() async => published;
+
+  @override
+  Future<void> recordControl({
+    required String announcementWorkflowId,
+    required String level,
+    required String publicSummary,
+    required List<ControlElementInput> elements,
+  }) async {
+    lastControlLevel = level;
+    lastControlElements = elements;
+  }
 }
 
 PendingModeration _moderationFixture() => PendingModeration.fromJson({
@@ -166,6 +184,82 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: HomeShell(account: account)));
       await tester.pumpAndSettle();
       expect(find.text('Modération Teranga Immo'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Contrôler une annonce exige un résumé et une explication par élément',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final gateway = FakeAccountGateway()
+        ..user = testUser
+        ..stored = profile(role: AccountRole.admin);
+      final account = AccountController(gateway);
+      addTearDown(account.dispose);
+      addTearDown(gateway.events.close);
+      await account.refreshProfile();
+      final moderation = FakeModerationGateway()
+        ..published = [
+          PublishedAnnouncement.fromJson({
+            'workflow_id': '11111111-1111-4111-8111-111111111111',
+            'region': 'Dakar',
+            'ville': 'Dakar',
+            'quartier': 'Mermoz',
+            'type_logement': 'Appartement',
+            'loyer_mensuel': 150000,
+            'niveau_controle': 'declaree',
+          }),
+        ];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AdminFlow(account: account, moderation: moderation),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Contrôler'));
+      await tester.tap(find.text('Contrôler'));
+      await tester.pumpAndSettle();
+      expect(find.text('Contrôler l’annonce'), findsOneWidget);
+
+      final submit = find.text('Enregistrer le contrôle');
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(find.text('Le résumé public est obligatoire.'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Résumé public du contrôle'),
+        'Logement visité et conforme à l’annonce.',
+      );
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Une explication est requise pour chaque élément.'),
+        findsOneWidget,
+      );
+
+      final explanationFields = find.widgetWithText(
+        TextField,
+        'Explication publique',
+      );
+      final explanationCount = explanationFields.evaluate().length;
+      for (var i = 0; i < explanationCount; i++) {
+        await tester.enterText(explanationFields.at(i), 'Vérifié sur place.');
+      }
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Contrôler l’annonce'), findsNothing);
+      expect(moderation.lastControlLevel, 'informations_controlees');
+      expect(moderation.lastControlElements, hasLength(8));
+      expect(
+        moderation.lastControlElements!.every(
+          (element) => element.explanation == 'Vérifié sur place.',
+        ),
+        isTrue,
+      );
     },
   );
 }

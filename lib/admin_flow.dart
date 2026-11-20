@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import 'account_service.dart';
+import 'control_page.dart';
 import 'design_system/design_system.dart';
+import 'models/control_level.dart';
 import 'moderation_service.dart';
 import 'tenant_widgets.dart';
 
@@ -21,6 +23,7 @@ class AdminFlow extends StatefulWidget {
 class _AdminFlowState extends State<AdminFlow> {
   List<PendingModeration>? pendingModeration;
   List<PendingWithdrawal>? pendingWithdrawals;
+  List<PublishedAnnouncement>? published;
   String? loadError;
   bool loading = false;
   final busyVersionIds = <String>{};
@@ -42,10 +45,12 @@ class _AdminFlowState extends State<AdminFlow> {
     try {
       final moderation = await gateway.listPendingModeration();
       final withdrawals = await gateway.listPendingWithdrawals();
+      final publishedList = await gateway.listPublished();
       if (mounted) {
         setState(() {
           pendingModeration = moderation;
           pendingWithdrawals = withdrawals;
+          published = publishedList;
         });
       }
     } catch (_) {
@@ -168,6 +173,16 @@ class _AdminFlowState extends State<AdminFlow> {
     }
   }
 
+  Future<void> openControl(PublishedAnnouncement item) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ControlPage(announcement: item, moderation: widget.moderation!),
+      ),
+    );
+    if (saved == true) load();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: TerangaColors.ivory,
@@ -238,6 +253,18 @@ class _AdminFlowState extends State<AdminFlow> {
                   ),
                 for (final item in pendingWithdrawals ?? const [])
                   withdrawalCard(item),
+                const SizedBox(height: TerangaSpacing.xxl),
+                Text(
+                  'Annonces publiées',
+                  style: TerangaTypography.sectionTitle.copyWith(fontSize: 20),
+                ),
+                const SizedBox(height: TerangaSpacing.sm),
+                if (!loading && (published ?? const []).isEmpty)
+                  Text(
+                    'Aucune annonce publiée.',
+                    style: TerangaTypography.meta,
+                  ),
+                for (final item in published ?? const []) publishedCard(item),
               ],
             ),
           ),
@@ -340,6 +367,46 @@ class _AdminFlowState extends State<AdminFlow> {
                   ),
                 ],
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget publishedCard(PublishedAnnouncement item) {
+    final location = [
+      item.district,
+      item.city,
+      item.region,
+    ].where((part) => part != null && part.isNotEmpty).join(', ');
+    final level = ControlLevel.fromDatabase(item.controlLevel);
+    return Card(
+      margin: const EdgeInsets.only(bottom: TerangaSpacing.md),
+      child: Padding(
+        padding: const EdgeInsets.all(TerangaSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.housingType ?? 'Logement',
+              style: TerangaTypography.cardTitle,
+            ),
+            Text(location, style: TerangaTypography.body),
+            if (item.monthlyRent != null)
+              Text(
+                '${item.monthlyRent} FCFA / mois',
+                style: TerangaTypography.body,
+              ),
+            const SizedBox(height: TerangaSpacing.sm),
+            Text(
+              '${level.indicator} ${level.label}',
+              style: TerangaTypography.meta,
+            ),
+            const SizedBox(height: TerangaSpacing.md),
+            OutlinedButton(
+              onPressed: () => openControl(item),
+              child: const Text('Contrôler'),
+            ),
           ],
         ),
       ),
